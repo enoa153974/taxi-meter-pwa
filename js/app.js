@@ -49,16 +49,9 @@ document.getElementById('btnGoHome')?.addEventListener('click', () => {
 
 document.getElementById('btnChatGPT')?.addEventListener('click', () => {
     navigator.vibrate?.(50);
-
-    const t0 = Date.now();
-    // まずアプリ起動を試す（失敗する場合もある）
-    location.href = 'intent://chat.openai.com/#Intent;scheme=https;package=com.openai.chatgpt;end';
-
-    // ダメならWebへ
-    setTimeout(() => {
-        if (Date.now() - t0 < 1500) location.href = 'https://chatgpt.com/';
-    }, 1000);
+    location.href = 'https://chatgpt.com/';
 });
+
 
 
 document.getElementById('btnMap')?.addEventListener('click', () => {
