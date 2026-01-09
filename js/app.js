@@ -37,15 +37,43 @@ document.addEventListener('DOMContentLoaded', () => {
     messageEl.textContent = messages[index];
 });
 
+/* =========================
+    コントロールパネルの動作
+========================= */
+document.getElementById('btnGoHome')?.addEventListener('click', () => {
+    navigator.vibrate?.(50);
+    const LINE_ID = 'am153974';
+    const msg = encodeURIComponent('今から帰ります🚕');
+
+    // あしゃのトークを直接開く（＋メッセージ）
+    location.href = `https://line.me/R/ti/p/~${LINE_ID}?text=${msg}`;
+});
+
+document.getElementById('btnOpenLine')?.addEventListener('click', () => {
+    navigator.vibrate?.(50);
+    const LINE_ID = 'am153974';
+    location.href = `https://line.me/R/ti/p/~${LINE_ID}`;
+});
+
+document.getElementById('btnMap')?.addEventListener('click', () => {
+    navigator.vibrate?.(50);
+    location.href = 'https://www.google.com/maps/search/?api=1&query=現在地';
+});
+
+document.getElementById('btnCalc')?.addEventListener('click', () => {
+    navigator.vibrate?.(50);
+    location.href = 'intent://calculator#Intent;scheme=calculator;package=com.android.calculator2;end';
+});
+
 
 /* =========================
     出勤・帰社・退勤・次回出勤
 ========================= */
 document.addEventListener('DOMContentLoaded', () => {
-    const startInput   = document.getElementById('startTime');
-    const returnEl     = document.getElementById('returnTime');
-    const endEl        = document.getElementById('endTime');
-    const nextStartEl  = document.getElementById('nextStartTime');
+    const startInput = document.getElementById('startTime');
+    const returnEl = document.getElementById('returnTime');
+    const endEl = document.getElementById('endTime');
+    const nextStartEl = document.getElementById('nextStartTime');
 
     if (!startInput || !returnEl || !endEl || !nextStartEl) return;
 
