@@ -42,17 +42,14 @@ document.addEventListener('DOMContentLoaded', () => {
 ========================= */
 document.getElementById('btnGoHome')?.addEventListener('click', () => {
     navigator.vibrate?.(50);
-    const LINE_ID = 'am153974';
-    const msg = encodeURIComponent('今から帰ります🚕');
 
-    // あしゃのトークを直接開く（＋メッセージ）
-    location.href = `https://line.me/R/ti/p/~${LINE_ID}?text=${msg}`;
+    const msg = encodeURIComponent('今から帰ります🚕');
+    location.href = `https://line.me/R/msg/text/?${msg}`;
 });
 
 document.getElementById('btnOpenLine')?.addEventListener('click', () => {
     navigator.vibrate?.(50);
-    const LINE_ID = 'am153974';
-    location.href = `https://line.me/R/ti/p/~${LINE_ID}`;
+    location.href = 'https://line.me/';
 });
 
 document.getElementById('btnMap')?.addEventListener('click', () => {
