@@ -53,11 +53,11 @@ document.getElementById('btnChatGPT')?.addEventListener('click', () => {
 });
 
 
-
 document.getElementById('btnMap')?.addEventListener('click', () => {
     navigator.vibrate?.(50);
-    location.href = 'https://www.google.com/maps/search/?api=1&query=現在地';
+    location.href = 'https://www.google.com/maps';
 });
+
 
 document.getElementById('btnCalc')?.addEventListener('click', () => {
     navigator.vibrate?.(50);
@@ -112,6 +112,8 @@ document.addEventListener('DOMContentLoaded', () => {
 ========================= */
 function getWorkDate(date) {
     const d = new Date(date);
+
+    // 深夜0:00〜3:59は前日の業務日扱い
     if (d.getHours() < 4) {
         d.setDate(d.getDate() - 1);
     }
@@ -124,33 +126,29 @@ function getWorkDate(date) {
 
 
 /* =========================
-    時間計算ロジック
+    時間計算ロジック（シンプル版）
 ========================= */
 function calculateTimes(startValue, returnEl, endEl, nextStartEl) {
+    if (!startValue) return;
+
     const [h, m] = startValue.split(':').map(Number);
 
     const startDate = new Date();
     startDate.setHours(h, m, 0, 0);
 
     /*
-        会社ルール
-        ・拘束時間上限：15時間
-        ・自動加算
-        - 出勤前準備：10分
-        - 休憩：1時間30分
-        - 帰社後処理：30分
-
-        → 営業可能時間：12時間50分
-        → 退勤：帰社 + 40分
-        → 次回出勤可能：退勤 + 9時間
+        シンプル運用ルール
+        ・帰社：出勤から13時間後
+        ・退勤：帰社から1時間後
+        ・次回出勤可能：退勤から9時間後
     */
 
-    const OPERATING_MINUTES = 12 * 60 + 50;
-    const AFTER_RETURN_MINUTES = 40;
-    const REST_MINUTES = 9 * 60;
+    const RETURN_MINUTES = 13 * 60; // 出勤 → 帰社
+    const END_MINUTES = 1 * 60;     // 帰社 → 退勤
+    const REST_MINUTES = 9 * 60;    // 退勤 → 次回出勤可能
 
-    const returnDate = addMinutes(startDate, OPERATING_MINUTES);
-    const endDate = addMinutes(returnDate, AFTER_RETURN_MINUTES);
+    const returnDate = addMinutes(startDate, RETURN_MINUTES);
+    const endDate = addMinutes(returnDate, END_MINUTES);
     const nextStartDate = addMinutes(endDate, REST_MINUTES);
 
     returnEl.textContent = formatTime(returnDate);
