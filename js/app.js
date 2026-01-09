@@ -47,18 +47,19 @@ document.getElementById('btnGoHome')?.addEventListener('click', () => {
     location.href = `https://line.me/R/msg/text/?${msg}`;
 });
 
-document.getElementById('btnOpenLine')?.addEventListener('click', () => {
+document.getElementById('btnChatGPT')?.addEventListener('click', () => {
     navigator.vibrate?.(50);
 
-    const start = Date.now();
-    location.href = 'line://';
+    const t0 = Date.now();
+    // まずアプリ起動を試す（失敗する場合もある）
+    location.href = 'intent://chat.openai.com/#Intent;scheme=https;package=com.openai.chatgpt;end';
 
+    // ダメならWebへ
     setTimeout(() => {
-        if (Date.now() - start < 1500) {
-            location.href = 'https://line.me/';
-        }
+        if (Date.now() - t0 < 1500) location.href = 'https://chatgpt.com/';
     }, 1000);
 });
+
 
 document.getElementById('btnMap')?.addEventListener('click', () => {
     navigator.vibrate?.(50);
