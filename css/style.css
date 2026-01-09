@@ -1,0 +1,263 @@
+/* ===== mini reset ===== */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
+
+body {
+    -webkit-text-size-adjust: 100%;
+    font-family: 'Inter', system-ui, sans-serif;
+    /* 余白は黒に表示 */
+    background: #000;
+}
+
+button {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+img {
+    max-width: 100%;
+    display: block;
+}
+
+/* 全体の表示サイズの制御 */
+.app {
+    max-width: 480px;
+    margin: 0 auto;
+    min-height: 100vh;
+}
+
+/*全体部分 */
+.main__wrapper {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: #555;
+    border: 1px solid #333;
+    box-shadow: inset 0 0 8px rgba(0, 0, 0, .8);
+    padding: 2rem 1rem;
+    border: #222 solid 5px;
+}
+
+.header {
+    flex-shrink: 0;
+    padding: 2rem 1rem;
+}
+
+.header__message {
+    letter-spacing: .05em;
+}
+
+/* メーター部分 */
+.meter__wrapper {
+    flex-shrink: 0;
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+/* 時刻表示部分 */
+.meter__time {
+    position: relative;
+    width: 70%;
+    font-size: clamp(1.5rem, -4.75rem + 40vw, 4rem);
+    font-family: 'Share Tech Mono', monospace;
+    font-weight: bold;
+    border: solid #222 10px;
+    border-top: solid #111 20px;
+    border-radius: 5px;
+    text-align: center;
+    padding: 1rem 0 2rem;
+    background:
+        linear-gradient(to bottom,
+            #e0e0da 0%,
+            #d0d0ca 35%,
+            #c4c4be 70%,
+            #b8b8b2 100%);
+}
+
+/* 【時刻】の文字装飾表示 */
+.meter__time::after {
+    position: absolute;
+    bottom: 1rem;
+    right: 1.25rem;
+    content: "時刻";
+    font-size: 1.25rem;
+    border: solid 2px #333;
+}
+
+/* メーターボタン部分 */
+.meter__btn {
+    width: 30%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    text-align: center;
+}
+
+/* 各メーターボタン */
+.meter__btn div {
+    border: solid 5px #333;
+    border-radius: 10px;
+    font-size: clamp(0.75rem, -1.125rem + 12vw, 1.5rem);
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    font-weight: bold;
+    background-color: #999;
+    color: #111;
+}
+
+.meter__lamp {
+    position: relative;
+    padding: .25rem .75rem;
+    text-align: center;
+}
+
+.meter__lamp::before {
+    content: "";
+    position: absolute;
+    inset: -50%;
+    background:
+        radial-gradient(circle,
+            rgba(255, 255, 255, .15) 0%,
+            rgba(255, 255, 255, .08) 40%,
+            rgba(255, 255, 255, 0) 70%);
+    pointer-events: none;
+    z-index: -1;
+}
+
+.meter__lamp--red {
+    background:
+        radial-gradient(circle,
+            rgba(255, 60, 60, .45) 0%,
+            rgba(255, 60, 60, .25) 45%,
+            rgba(255, 60, 60, .12) 70%,
+            rgba(255, 60, 60, 0) 85%);
+}
+
+.meter__lamp--blue {
+    background:
+        radial-gradient(circle,
+            rgba(40, 120, 255, .5) 0%,
+            rgba(40, 120, 255, .28) 45%,
+            rgba(40, 120, 255, .14) 70%,
+            rgba(40, 120, 255, 0) 85%);
+}
+
+.meter__lamp--green {
+    background:
+        radial-gradient(circle,
+            rgba(120, 255, 120, .55) 0%,
+            rgba(120, 255, 120, .3) 45%,
+            rgba(120, 255, 120, .15) 70%,
+            rgba(120, 255, 120, 0) 85%);
+}
+
+.meter__line {
+    width: 70%;
+    height: 3px;
+    margin: 0 0 0 auto;
+
+}
+
+
+/* コントロールボタンパネル */
+.controls {
+    display: flex;
+    gap: 0.5rem;
+    padding-top: 1.5rem;
+    justify-content: center;
+}
+
+.controls__btn {
+    aspect-ratio: 1/1.5;
+    width: 25%;
+    border-radius: 16px;
+    background-color: #d0d3d8;
+    border: solid 3px #333;
+    color: #3f5f9a;
+}
+
+
+.controls__btn p {
+    margin: 0;
+    color: #111;
+    font-size: clamp(0.75rem, -0.5rem + 8vw, 1.25rem);
+    font-weight: bold;
+}
+
+
+/* utilityセクション */
+.utility {
+    padding: 2rem 0;
+    display: flex;
+    justify-content: end;
+}
+
+.utility__btn {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .5rem .75rem;
+    font-size: .75rem;
+    color: #ccc;
+    background: #222;
+    border: 1px solid #444;
+    border-radius: .25rem;
+}
+
+.utility__btn i {
+    font-size: 1rem;
+    color: #aaa;
+}
+
+/* 出勤時間等の表示部分 */
+.time-calc {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    position: relative;
+    border: solid 3px #333;
+    padding: 1rem 1rem 2rem 2rem;
+    font-size: 1rem;
+    color: #2b2b2b;
+    font-weight: bold;
+}
+
+.time-calc::before {
+    content: "\f0c6";
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    font-size: 2.5rem;
+    position: absolute;
+    top: -1rem;
+    left: -.25rem;
+}
+
+.time-calc__input{
+    display: flex;
+    gap: .75rem;
+}
+
+.time-calc__row{
+    display: flex;
+    gap:.75rem;
+    margin-bottom: .5rem;
+}
