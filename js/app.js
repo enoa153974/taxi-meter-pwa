@@ -66,6 +66,104 @@ document.getElementById('btnCalc')?.addEventListener('click', () => {
 
 
 /* =========================
+    天気パネルの動作
+========================= */
+const API_KEY = '431956e1ae5d6c3bde0cbdbaf7b3102e';
+
+const statusEl = document.getElementById('weather-status');
+const tempEl = document.getElementById('weather-temp');
+const refreshBtn = document.getElementById('weather-refresh');
+
+let weatherInterval = null;
+const AUTO_UPDATE_INTERVAL = 30 * 60 * 1000;//30分
+
+function fetchWeather() {
+    if (!navigator.geolocation) {
+        statusEl.textContent = '位置情報が使えません';
+        return;
+    }
+
+    statusEl.textContent = '天気取得中…';
+    tempEl.textContent = '';
+
+    navigator.geolocation.getCurrentPosition(
+        async (position) => {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+
+            try {
+                const res = await fetch(
+                    `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&lang=ja&appid=${API_KEY}`
+                );
+                const data = await res.json();
+
+                const weatherMain = data.weather[0].main;
+                const weatherDesc = data.weather[0].description;
+                const temp = Math.round(data.main.temp);
+
+                const icon = getWeatherIcon(weatherMain);
+
+                statusEl.textContent = `${icon} ${weatherDesc}`;
+                tempEl.textContent = `気温：${temp}℃`;
+            } catch (error) {
+                statusEl.textContent = '天気取得に失敗しました';
+            }
+        },
+        () => {
+            statusEl.textContent = '位置情報が許可されていません';
+        }
+    );
+}
+
+function getWeatherIcon(main) {
+    switch (main) {
+        case 'Clear':
+            return '☀️';
+        case 'Clouds':
+            return '☁️';
+        case 'Rain':
+        case 'Drizzle':
+            return '🌧️';
+        case 'Thunderstorm':
+            return '⛈️';
+        case 'Snow':
+            return '❄️';
+        default:
+            return '🌥️';
+    }
+}
+
+refreshBtn.addEventListener('click', fetchWeather);
+
+/*　自動更新の開始・停止関数 */
+function startAutoUpdate() {
+    if (weatherInterval === null) {
+        weatherInterval = setInterval(fetchWeather, AUTO_UPDATE_INTERVAL);
+    }
+}
+
+function stopAutoUpdate() {
+    if (weatherInterval !== null) {
+        clearInterval(weatherInterval);
+        weatherInterval = null;
+    }
+}
+
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+        fetchWeather();      // 戻ってきたら即更新
+        startAutoUpdate();   // 自動更新再開
+    } else {
+        stopAutoUpdate();    // 非表示なら停止
+    }
+});
+
+// 初回取得 & 表示中のみ自動更新開始
+fetchWeather();
+startAutoUpdate();
+
+
+/* =========================
     出勤・帰社・退勤・次回出勤
 ========================= */
 document.addEventListener('DOMContentLoaded', () => {

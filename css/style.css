@@ -208,8 +208,33 @@ img {
 .utility {
     padding: 2rem 0;
     display: flex;
-    justify-content: end;
+    justify-content: space-between;
 }
+
+/* 天気パネル */
+.weather-panel {
+    background: #333;
+    color: #fff;
+    border-radius: 12px;
+    padding: 12px;
+    font-size: 14px;
+}
+
+.weather-panel__inner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.weather-panel button {
+    margin-left: auto;
+    padding: 4px 10px;
+    border-radius: 8px;
+    border: none;
+    background: #333;
+    color: #fff;
+}
+
 
 .utility__btn {
     display: flex;
@@ -251,13 +276,13 @@ img {
     left: -.25rem;
 }
 
-.time-calc__input{
+.time-calc__input {
     display: flex;
     gap: .75rem;
 }
 
-.time-calc__row{
+.time-calc__row {
     display: flex;
-    gap:.75rem;
+    gap: .75rem;
     margin-bottom: .5rem;
 }
