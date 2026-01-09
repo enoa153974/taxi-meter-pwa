@@ -49,7 +49,15 @@ document.getElementById('btnGoHome')?.addEventListener('click', () => {
 
 document.getElementById('btnOpenLine')?.addEventListener('click', () => {
     navigator.vibrate?.(50);
-    location.href = 'https://line.me/';
+
+    const start = Date.now();
+    location.href = 'line://';
+
+    setTimeout(() => {
+        if (Date.now() - start < 1500) {
+            location.href = 'https://line.me/';
+        }
+    }, 1000);
 });
 
 document.getElementById('btnMap')?.addEventListener('click', () => {
@@ -59,7 +67,7 @@ document.getElementById('btnMap')?.addEventListener('click', () => {
 
 document.getElementById('btnCalc')?.addEventListener('click', () => {
     navigator.vibrate?.(50);
-    location.href = 'intent://calculator#Intent;scheme=calculator;package=com.android.calculator2;end';
+    location.href = 'https://www.google.com/search?q=calculator';
 });
 
 
