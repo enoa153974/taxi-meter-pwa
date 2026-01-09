@@ -50,7 +50,7 @@ img {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    background: #555;
+    background: #888;
     border: 1px solid #333;
     box-shadow: inset 0 0 8px rgba(0, 0, 0, .8);
     padding: 2rem 1rem;
