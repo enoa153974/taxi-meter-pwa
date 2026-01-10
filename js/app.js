@@ -49,6 +49,13 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
         line2.style.display = 'none';
     }
+
+    // 初回表示
+    setRandomMessage();
+    checkRollCall();
+
+    // 30分ごとに応援コメントだけ更新
+    setInterval(setRandomMessage, UPDATE_INTERVAL);
 });
 
 /* =========================
@@ -138,7 +145,6 @@ translateBtn?.addEventListener('touchcancel', clearPressTimer);
 translateBtn?.addEventListener('mouseleave', clearPressTimer);
 
 
-
 /* =========================
     天気パネルの動作
 ========================= */
@@ -149,9 +155,9 @@ const tempEl = document.getElementById('weather-temp');
 const refreshBtn = document.getElementById('weather-refresh');
 
 let weatherInterval = null;
-const AUTO_UPDATE_INTERVAL = 30 * 60 * 1000;//30分
+const AUTO_UPDATE_INTERVAL = 30 * 60 * 1000; // 30分
 
-function fetchWeather() {
+function fetchWeather(retry = false) {
     if (!navigator.geolocation) {
         statusEl.textContent = '位置情報が使えません';
         return;
@@ -162,8 +168,7 @@ function fetchWeather() {
 
     navigator.geolocation.getCurrentPosition(
         async (position) => {
-            const lat = position.coords.latitude;
-            const lon = position.coords.longitude;
+            const { latitude: lat, longitude: lon } = position.coords;
 
             try {
                 const res = await fetch(
@@ -171,45 +176,38 @@ function fetchWeather() {
                 );
                 const data = await res.json();
 
-                const weatherMain = data.weather[0].main;
-                const weatherDesc = data.weather[0].description;
-                const temp = Math.round(data.main.temp);
-
-                const icon = getWeatherIcon(weatherMain);
-
-                statusEl.textContent = `${icon} ${weatherDesc}`;
-                tempEl.textContent = `気温：${temp}℃`;
-            } catch (error) {
+                statusEl.textContent =
+                    `${getWeatherIcon(data.weather[0].main)} ${data.weather[0].description}`;
+                tempEl.textContent =
+                    `気温：${Math.round(data.main.temp)}℃`;
+            } catch {
                 statusEl.textContent = '天気取得に失敗しました';
             }
         },
         () => {
-            statusEl.textContent = '位置情報が許可されていません';
+            if (!retry) {
+                setTimeout(() => fetchWeather(true), 3000);
+            } else {
+                statusEl.textContent = '位置情報が取得できません';
+            }
         }
     );
 }
 
 function getWeatherIcon(main) {
     switch (main) {
-        case 'Clear':
-            return '☀️';
-        case 'Clouds':
-            return '☁️';
+        case 'Clear': return '☀️';
+        case 'Clouds': return '☁️';
         case 'Rain':
-        case 'Drizzle':
-            return '🌧️';
-        case 'Thunderstorm':
-            return '⛈️';
-        case 'Snow':
-            return '❄️';
-        default:
-            return '🌥️';
+        case 'Drizzle': return '🌧️';
+        case 'Thunderstorm': return '⛈️';
+        case 'Snow': return '❄️';
+        default: return '🌥️';
     }
 }
 
-refreshBtn.addEventListener('click', fetchWeather);
+refreshBtn?.addEventListener('click', fetchWeather);
 
-/*　自動更新の開始・停止関数 */
 function startAutoUpdate() {
     if (weatherInterval === null) {
         weatherInterval = setInterval(fetchWeather, AUTO_UPDATE_INTERVAL);
@@ -223,16 +221,15 @@ function stopAutoUpdate() {
     }
 }
 
-document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-        fetchWeather();      // 戻ってきたら即更新
-        startAutoUpdate();   // 自動更新再開
-    } else {
-        stopAutoUpdate();    // 非表示なら停止
+// iOS PWA 復帰対策（最重要）
+window.addEventListener('pageshow', (event) => {
+    if (event.persisted) {
+        fetchWeather();
+        startAutoUpdate();
     }
 });
 
-// 初回取得 & 表示中のみ自動更新開始
+// 初回
 fetchWeather();
 startAutoUpdate();
 

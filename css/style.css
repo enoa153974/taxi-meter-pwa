@@ -279,7 +279,7 @@ img {
 
 /* 天気パネル */
 .weather-panel {
-    background: #333;
+    background:  #3f5f9a;
     color: #fff;
     border-radius: 12px;
     padding: 12px;
@@ -301,6 +301,20 @@ img {
     color: #fff;
 }
 
+.weather-refresh__btn {
+    background: #888;
+    color: #fff;
+    border: none;
+    border-radius: .375rem;
+    padding: .4rem .6rem;
+    font-size: .85rem;
+    box-shadow: 0 .1rem .2rem rgba(0, 0, 0, .25);
+}
+
+.weather-refresh__btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 .05rem .1rem rgba(0, 0, 0, .2);
+}
 
 .utility__btn {
     display: flex;
@@ -360,7 +374,7 @@ img {
     font-weight: bold;
 }
 
-.info{
+.info {
     display: flex;
     justify-content: space-between;
 }
@@ -468,6 +482,7 @@ img {
     border-bottom: 1px solid #ddd;
     z-index: 10;
 }
+
 /* ===== スマホ最適化 ===== */
 
 @media (max-width: 480px) {
