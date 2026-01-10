@@ -20,26 +20,41 @@ setInterval(updateCurrentTime, 1000);
     応援コメント（ランダム）
 ========================= */
 document.addEventListener('DOMContentLoaded', () => {
+    const line1 = document.getElementById('ledLine1');
+    const line2 = document.getElementById('ledLine2');
+    if (!line1 || !line2) return;
+
     const messages = [
         '今日も安全運転で！',
-        '無理せずマイペースに運行してね。',
+        '無理せずマイペースに。',
         '焦らず、いつも通りで大丈夫！',
         '気をつけていってらっしゃい！',
-        'たくさんのお客様にご乗車いただけますように✨',
+        '楽しんだもん勝ち！',
         '休憩も仕事のうちです！',
         '安心安全な運転を！'
     ];
 
-    const messageEl = document.getElementById('cheerMessage');
-    if (!messageEl) return;
+    const rollCallDays = [10, 11, 21, 22]; // 一斉点呼の日
+    const today = new Date();
+    const tomorrow = today.getDate() + 1;
 
-    const index = Math.floor(Math.random() * messages.length);
-    messageEl.textContent = messages[index];
+    // 1行目（常時）
+    line1.textContent =
+        messages[Math.floor(Math.random() * messages.length)];
+
+    // 2行目（必要なときだけ）
+    if (rollCallDays.includes(tomorrow)) {
+        line2.textContent = '明日は一斉点呼です';
+        line2.style.display = 'block';
+    } else {
+        line2.style.display = 'none';
+    }
 });
 
 /* =========================
     コントロールパネルの動作
 ========================= */
+/* 帰宅ボタン */
 document.getElementById('btnGoHome')?.addEventListener('click', () => {
     navigator.vibrate?.(50);
 
@@ -47,21 +62,72 @@ document.getElementById('btnGoHome')?.addEventListener('click', () => {
     location.href = `https://line.me/R/msg/text/?${msg}`;
 });
 
+/* GPTボタン */
 document.getElementById('btnChatGPT')?.addEventListener('click', () => {
     navigator.vibrate?.(50);
     location.href = 'https://chatgpt.com/';
 });
 
 
+/* マップボタン */
 document.getElementById('btnMap')?.addEventListener('click', () => {
     navigator.vibrate?.(50);
     location.href = 'https://www.google.com/maps';
 });
 
+/* 翻訳ボタン */
+const translateBtn = document.getElementById('btnTranslate');
 
-document.getElementById('btnCalc')?.addEventListener('click', () => {
+let pressTimer = null;
+let isLongPress = false;
+const LONG_PRESS_TIME = 600; // ms
+
+function startPressTimer(longPressAction) {
+    isLongPress = false;
+    pressTimer = setTimeout(() => {
+        isLongPress = true;
+        navigator.vibrate?.(80);
+        longPressAction();
+    }, LONG_PRESS_TIME);
+}
+
+function clearPressTimer() {
+    if (pressTimer) {
+        clearTimeout(pressTimer);
+        pressTimer = null;
+    }
+}
+
+/* ===== 長押し開始 ===== */
+translateBtn?.addEventListener('touchstart', (e) => {
+    e.preventDefault(); // iOSの不要な挙動防止
+    startPressTimer(() => {
+        location.href = 'https://translate.google.com/?sl=ja&tl=zh-CN';
+    });
+});
+
+translateBtn?.addEventListener('mousedown', () => {
+    startPressTimer(() => {
+        location.href = 'https://translate.google.com/?sl=ja&tl=zh-CN';
+    });
+});
+
+/* ===== 押すのをやめた ===== */
+translateBtn?.addEventListener('touchend', clearPressTimer);
+translateBtn?.addEventListener('touchcancel', clearPressTimer);
+translateBtn?.addEventListener('mouseup', clearPressTimer);
+translateBtn?.addEventListener('mouseleave', clearPressTimer);
+
+/* ===== 通常タップ ===== */
+translateBtn?.addEventListener('click', (e) => {
+    if (isLongPress) {
+        // 長押し後の click を無視
+        e.preventDefault();
+        isLongPress = false;
+        return;
+    }
     navigator.vibrate?.(50);
-    location.href = 'https://www.google.com/search?q=calculator';
+    location.href = 'https://translate.google.com/?sl=ja&tl=en';
 });
 
 
@@ -234,16 +300,9 @@ function calculateTimes(startValue, returnEl, endEl, nextStartEl) {
     const startDate = new Date();
     startDate.setHours(h, m, 0, 0);
 
-    /*
-        シンプル運用ルール
-        ・帰社：出勤から13時間後
-        ・退勤：帰社から1時間後
-        ・次回出勤可能：退勤から9時間後
-    */
-
-    const RETURN_MINUTES = 13 * 60; // 出勤 → 帰社
-    const END_MINUTES = 1 * 60;     // 帰社 → 退勤
-    const REST_MINUTES = 9 * 60;    // 退勤 → 次回出勤可能
+    const RETURN_MINUTES = 13 * 60;
+    const END_MINUTES = 1 * 60;
+    const REST_MINUTES = 9 * 60;
 
     const returnDate = addMinutes(startDate, RETURN_MINUTES);
     const endDate = addMinutes(returnDate, END_MINUTES);
@@ -252,8 +311,22 @@ function calculateTimes(startValue, returnEl, endEl, nextStartEl) {
     returnEl.textContent = formatTime(returnDate);
     endEl.textContent = formatTime(endDate);
     nextStartEl.textContent = formatTime(nextStartDate);
+
+    /* ===== 深夜3時超え判定 ===== */
+    const LATE_HOUR = 3;
+
+    if (endDate.getHours() >= LATE_HOUR) {
+        endEl.classList.add('is-late-end');
+    } else {
+        endEl.classList.remove('is-late-end');
+    }
 }
 
+/* 定型文ボタン */
+document.getElementById('btnPhrases')?.addEventListener('click', () => {
+    navigator.vibrate?.(50);
+    location.href = './phrases.html';
+});
 
 /* =========================
     共通ユーティリティ

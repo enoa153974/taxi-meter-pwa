@@ -29,6 +29,8 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=IBM+Plex+Sans:wght@400;500&family=Share+Tech+Mono&display=swap"
         rel="stylesheet">
 
+    <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
+
     <!-- font-awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
         integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
@@ -39,8 +41,10 @@
 <body>
     <main class="app">
         <div class="main__wrapper">
-            <section class="header">
-                <p class="header__message" id="cheerMessage"></p>
+            <!-- LEDボード風コメント掲示板 -->
+            <section class="led-board">
+                <p id="ledLine1" class="led-board__text"></p>
+                <p id="ledLine2" class="led-board__text led-board__text--sub"></p>
             </section>
             <!-- メーター部分（時刻＋ボタン） -->
             <section class="meter">
@@ -75,9 +79,9 @@
                     <p>マップ</p>
                 </button>
 
-                <button class="btn controls__btn" id="btnCalc">
-                    <i class="fa-solid fa-calculator"></i>
-                    <p>電卓</p>
+                <button class="btn controls__btn" id="btnTranslate">
+                    <i class="fa-solid fa-language"></i>
+                    <p>翻訳</p>
                 </button>
             </section>
 
@@ -97,26 +101,34 @@
 
             </section>
 
-            <div class="time-calc">
-                <div class="time-calc__input">
-                    <label for="startTime">出勤</label>
-                    <input type="time" id="startTime">
-                </div>
+            <section class="info">
+                <div class="time-calc">
+                    <div class="time-calc__input">
+                        <label for="startTime">出勤</label>
+                        <input type="time" id="startTime">
+                    </div>
 
-                <div class="time-calc__result">
-                    <div class="time-calc__row">
-                        <span>帰社</span>
-                        <span id="returnTime">--:--</span>
+                    <div class="time-calc__result">
+                        <div class="time-calc__row">
+                            <span>帰社</span>
+                            <span id="returnTime">--:--</span>
+                        </div>
+                        <div class="time-calc__row">
+                            <span>退勤</span>
+                            <span id="endTime">--:--</span>
+                        </div>
                     </div>
-                    <div class="time-calc__row">
-                        <span>退勤</span>
-                        <span id="endTime">--:--</span>
+                    <div class="time-calc__next">
+                        次回出勤可能　<span id="nextStartTime">--:--</span>
                     </div>
                 </div>
-                <div class="time-calc__next">
-                    次回出勤可能　<span id="nextStartTime">--:--</span>
+                <div>
+                    <button id="btnPhrases" class="utility__btn">
+                        <i class="fa-solid fa-comment-dots"></i>
+                        <span class="control-btn__label">定型文</span>
+                    </button>
                 </div>
-            </div>
+            </section>
 
         </div>
     </main>
