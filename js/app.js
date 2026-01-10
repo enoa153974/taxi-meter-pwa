@@ -75,7 +75,6 @@ document.getElementById('btnMap')?.addEventListener('click', () => {
     location.href = 'https://www.google.com/maps';
 });
 
-/* 翻訳ボタン */
 const translateBtn = document.getElementById('btnTranslate');
 
 let pressTimer = null;
@@ -99,8 +98,7 @@ function clearPressTimer() {
 }
 
 /* ===== 長押し開始 ===== */
-translateBtn?.addEventListener('touchstart', (e) => {
-    e.preventDefault(); // iOSの不要な挙動防止
+translateBtn?.addEventListener('touchstart', () => {
     startPressTimer(() => {
         location.href = 'https://translate.google.com/?sl=ja&tl=zh-CN';
     });
@@ -113,22 +111,32 @@ translateBtn?.addEventListener('mousedown', () => {
 });
 
 /* ===== 押すのをやめた ===== */
-translateBtn?.addEventListener('touchend', clearPressTimer);
+translateBtn?.addEventListener('touchend', () => {
+    clearPressTimer();
+
+    // 短タップ判定
+    if (!isLongPress) {
+        navigator.vibrate?.(50);
+        location.href = 'https://translate.google.com/?sl=ja&tl=en';
+    }
+
+    isLongPress = false;
+});
+
+translateBtn?.addEventListener('mouseup', () => {
+    clearPressTimer();
+
+    if (!isLongPress) {
+        navigator.vibrate?.(50);
+        location.href = 'https://translate.google.com/?sl=ja&tl=en';
+    }
+
+    isLongPress = false;
+});
+
 translateBtn?.addEventListener('touchcancel', clearPressTimer);
-translateBtn?.addEventListener('mouseup', clearPressTimer);
 translateBtn?.addEventListener('mouseleave', clearPressTimer);
 
-/* ===== 通常タップ ===== */
-translateBtn?.addEventListener('click', (e) => {
-    if (isLongPress) {
-        // 長押し後の click を無視
-        e.preventDefault();
-        isLongPress = false;
-        return;
-    }
-    navigator.vibrate?.(50);
-    location.href = 'https://translate.google.com/?sl=ja&tl=en';
-});
 
 
 /* =========================
