@@ -1,4 +1,272 @@
 'use strict';
+let currentPanel = "time";//状態
+/* firestoreデータベースをインポート */
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs }
+    from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+
+//firebaseに接続するために必要な情報群
+const firebaseConfig = {
+    apiKey: "AIzaSyBgBvARs1SFjkJQzRxj843MhrfVvBjaVjY",
+    authDomain: "taxi-meter-pwa.firebaseapp.com",
+    projectId: "taxi-meter-pwa",
+    storageBucket: "taxi-meter-pwa.firebasestorage.app",
+    messagingSenderId: "214753560501",
+    appId: "1:214753560501:web:d3acf1471098dbe5d2fbfc"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+
+// ===============================
+// 空車・実車・支払パネルのボタンの取得
+// ===============================
+//支払いパネルの必要ボタン取得
+const payBtn = document.getElementById("payBtn");
+const payForm = document.getElementById("payForm");
+const saveBtn = document.getElementById("saveSales");
+const amountInput = document.getElementById("salesAmount");
+const memoInput = document.getElementById("salesMemo");
+const saveMsg = document.getElementById("saveMessage");
+
+
+//空車パネルの必要ボタン取得
+const kuushaBtn = document.getElementById("kuushaBtn");
+const kuushaForm = document.getElementById("kuushaForm");
+
+// ===============================
+// 空車・実車・支払パネルの関数定義
+// ===============================
+
+/* 実車（集計）パネル表示 */
+async function showsummaryPanel() {
+    document.getElementById("summaryPanel").classList.remove("hidden");
+    document.getElementById("payForm").classList.add("hidden");
+    document.getElementById("logForm").classList.add("hidden");
+
+    // ===============================
+    // 実車パネルに売上集計を表示
+    // ===============================
+
+    const summaryEl = document.getElementById("summaryAmount");
+    summaryEl.textContent = "読み込み中…";
+
+    try {
+        const total = await loadSalesSummary();
+        summaryEl.textContent = `今月度累計：${total.toLocaleString()}円`;
+    } catch (e) {
+        summaryEl.textContent = "読み込みに失敗しました🥲";
+        console.error(e);
+    }
+
+}
+
+/* 全て閉じる関数 */
+function backToHome() {
+    document.getElementById("logForm")?.classList.add("hidden");
+    document.getElementById("payForm")?.classList.add("hidden");
+    document.getElementById("summaryPanel")?.classList.add("hidden");
+}
+
+/* 実車ボタン押下後に表示される詳細ボタンを押すと、売上集計ページに移管する処理 */
+document.getElementById("btnDetails")?.addEventListener("click", () => {
+    location.href = "./sales-details.html";
+});
+
+// ===============================
+// メーターパネルの表示切替関数
+// ===============================
+
+/* 各パネルを表示切替 */
+function switchMeterView(showId) {
+    const ids = ["meterTime", "logForm", "summaryPanel", "payForm"];
+
+    ids.forEach(id => {
+        document.getElementById(id)?.classList.toggle("hidden", id !== showId);
+    });
+
+    currentPanel = (showId === "meterTime") ? "time" : showId;
+}
+
+// 空車ボタンを押下したときの挙動
+logBtn.addEventListener("click", () => {
+    navigator.vibrate?.(50);
+    if (currentPanel === "logForm") {
+        switchMeterView("meterTime");
+    } else {
+        switchMeterView("logForm");
+    }
+});
+
+// 実車ボタンを押下したときの挙動
+summaryBtn.addEventListener("click", async () => {
+    navigator.vibrate?.(50);
+    if (currentPanel === "summaryPanel") {
+        switchMeterView("meterTime");
+    } else {
+        switchMeterView("summaryPanel");
+        await showsummaryPanel();
+    }
+});
+
+// 支払ボタンを押下したときの挙動
+payBtn.addEventListener("click", () => {
+    navigator.vibrate?.(50);
+    if (currentPanel === "payForm") {
+        switchMeterView("meterTime");
+    } else {
+        switchMeterView("payForm");
+    }
+});
+
+
+// 戻す場所が必要なら
+function backToMeterTime() {
+    switchMeterView("meterTime");
+}
+
+
+// ======= 空車ログ 保存処理 =======
+const saveLogBtn = document.getElementById("saveLogBtn");
+const logInput = document.getElementById("logInput");
+
+if (saveLogBtn) {
+    saveLogBtn.addEventListener("click", async () => {
+        const note = logInput.value.trim();
+
+        if (!note) {
+            alert("メモを入力してね！");
+            return;
+        }
+
+        try {
+            await addDoc(collection(db, "driverLogs"), {
+                note: note,
+                createdAt: new Date()
+            });
+
+            alert("🚕 ログ書き込みました！");
+            logInput.value = ""; // 入力リセット
+            backToHome();
+            backToMeterTime();
+
+        } catch (e) {
+            console.error("💥 driverLogs 保存失敗:", e);
+            alert("保存に失敗したかも…😢");
+        }
+    });
+}
+
+/* =========================
+    実車ボタン（集計データの表示＆移管）
+========================= */
+// ===============================
+// 月度判定（21日スタート）
+// ===============================
+function getBillingPeriod(date = new Date()) {
+    const d = new Date(date);
+
+    // ==========================
+    //  特例期間（必要ならここに追記）
+    // ==========================
+    const specialRanges = [
+        // 【2月度】 2026/1/21〜2026/2/19
+        { start: new Date(2026, 0, 21), end: new Date(2026, 1, 19) },
+
+        // 【3月度】 2026/2/20〜2026/3/21
+        { start: new Date(2026, 1, 20), end: new Date(2026, 2, 21) },
+
+        // 【4月度】 2026/3/22〜2026/4/20
+        { start: new Date(2026, 2, 22), end: new Date(2026, 3, 20) }
+    ];
+
+    // 今日が特例に含まれるかチェック
+    for (const r of specialRanges) {
+        if (d >= r.start && d <= r.end) {
+            return r;
+        }
+    }
+
+    // ==========================
+    //  通常ルール（21日〜翌20日）
+    // ==========================
+    const year = d.getFullYear();
+    const month = d.getMonth(); // 0=1月
+
+    // 今日が21日以降なら今月開始
+    const start = new Date(year, month, 21);
+
+    // 今日が20日以前なら前月開始
+    if (d.getDate() < 21) {
+        start.setMonth(start.getMonth() - 1);
+    }
+
+    // 終了は開始の翌月20日
+    const end = new Date(start);
+    end.setMonth(end.getMonth() + 1);
+    end.setDate(20);
+
+    return { start, end };
+}
+
+//firestoreから期間内だけ合計を出す関数
+async function loadSalesSummary() {
+    const { start, end } = getBillingPeriod();
+    let total = 0;
+
+    const snapshot = await getDocs(collection(db, "sales"));
+
+    snapshot.forEach((doc) => {
+        const data = doc.data();
+        const createdAt = data.createdAt.toDate(); // Timestamp → Date
+        if (createdAt >= start && createdAt <= end) {
+            total += Number(data.amount) || 0;
+        }
+    });
+
+    return total;
+}
+
+
+
+// ===============================
+// 支払いフォーム表示/保存処理
+// ===============================
+
+// ⭐ 保存ボタン押したら Firestore に追加
+saveBtn.addEventListener("click", async () => {
+    const amount = Number(amountInput.value);
+    const memo = memoInput.value || "";
+
+    // 入力チェック
+    if (!amount) {
+        saveMsg.textContent = "※金額を入力してください";
+        return;
+    }
+
+    try {
+        await addDoc(collection(db, "sales"), {
+            amount,
+            memo,
+            createdAt: new Date()
+        });
+
+        alert("売上入力完了！\n本日も一日おつかれさまでした！\n気をつけて帰ってきてね！");
+        amountInput.value = "";
+        memoInput.value = "";
+        backToHome();
+        backToMeterTime();
+
+
+    } catch (e) {
+        saveMsg.textContent = "💥 保存失敗";
+        console.error(e);
+    }
+});
+
+
 
 /* =========================
     現在時刻の表示
@@ -35,28 +303,35 @@ document.addEventListener('DOMContentLoaded', () => {
     ];
 
     const rollCallDays = [10, 11, 21, 22]; // 一斉点呼の日
-    const today = new Date();
-    const tomorrow = today.getDate() + 1;
 
-    // 1行目（常時）
-    line1.textContent =
-        messages[Math.floor(Math.random() * messages.length)];
-
-    // 2行目（必要なときだけ）
-    if (rollCallDays.includes(tomorrow)) {
-        line2.textContent = '明日は一斉点呼です';
-        line2.style.display = 'block';
-    } else {
-        line2.style.display = 'none';
+    // 🎯 応援コメントを更新する関数
+    function setRandomMessage() {
+        line1.textContent =
+            messages[Math.floor(Math.random() * messages.length)];
     }
 
-    // 初回表示
+    // 🎯 一斉点呼の日判定
+    function checkRollCall() {
+        const today = new Date();
+        const tomorrow = today.getDate() + 1;
+
+        if (rollCallDays.includes(tomorrow)) {
+            line2.textContent = '明日は一斉点呼です';
+            line2.style.display = 'block';
+        } else {
+            line2.style.display = 'none';
+        }
+    }
+
+    // 🌟 初回実行
     setRandomMessage();
     checkRollCall();
 
-    // 30分ごとに応援コメントだけ更新
+    // 🔁30分ごと更新（1800000ミリ秒）
+    const UPDATE_INTERVAL = 30 * 60 * 1000;
     setInterval(setRandomMessage, UPDATE_INTERVAL);
 });
+
 
 /* =========================
     コントロールパネルの動作

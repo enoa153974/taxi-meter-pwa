@@ -41,27 +41,59 @@
 <body>
     <main class="app">
         <div class="main__wrapper">
+
             <!-- LEDボード風コメント掲示板 -->
             <section class="led-board">
                 <p id="ledLine1" class="led-board__text"></p>
                 <p id="ledLine2" class="led-board__text led-board__text--sub"></p>
             </section>
+
             <!-- メーター部分（時刻＋ボタン） -->
             <section class="meter">
                 <div class="meter__wrapper">
-                    <div class="meter__time" id="currentTime">
-                        --:--
+
+                    <!-- メーターパネル部分（通常時：時計表示／ボタン押下で売上入力・ログ入力・総売上に切替） -->
+                    <div class="meter__panel">
+                        <!-- 時刻表示パネル -->
+                        <div id="meterTime" class="meter__time">
+                            <div id="currentTime">--:--</div>
+                        </div>
+
+                        <!-- [空車ボタン] ログ入力フォーム -->
+                        <div id="logForm" class="log__form hidden">
+                            <p class="log__text">一言ログ</p>
+                            <textarea rows="4" id="logInput" placeholder="気づいたことや一言ログを書いてね"></textarea>
+                            <button id="saveLogBtn" class="save-log__btn">保存する</button>
+                        </div>
+
+                        <!-- [実車ボタン]総売上表示 + 売上集計ページへ移管 -->
+                        <div id="summaryPanel" class="summary__Panel hidden">
+                            <h2 class="summary__text">今月の売上合計</h2>
+                            <p id="summaryAmount" class="summary__amount">集計中…</p>
+                            <button id="btnDetails" class="summary__btn">詳細を見る</button>
+                        </div>
+
+                        <!-- [支払ボタン]売上入力フォーム -->
+                        <div id="payForm" class="pay__form hidden">
+                            <p class="pay__text">本日の売上</p>
+                            <input id="salesAmount" type="number" placeholder="金額">
+                            <textarea rows="4" id="salesMemo" placeholder="気づいたことや一言ログを書いてね"></textarea>
+                            <button id="saveSales" class="save-sales__btn">保存</button>
+                        </div>
+
                     </div>
+                    <!-- 空車・実車・支払いボタン -->
                     <div class="meter__btn">
-                        <div class="meter__lamp meter__lamp--red">空車</div>
+                        <div id="logBtn" class="meter__lamp meter__lamp--red">空車</div>
                         <div class="meter__line"></div>
-                        <div class="meter__lamp meter__lamp--blue">実車</div>
+                        <div id="summaryBtn" class="meter__lamp meter__lamp--blue">実車</div>
                         <div class="meter__line"></div>
-                        <div class="meter__lamp meter__lamp--green">支払</div>
+                        <div id="payBtn" class="meter__lamp meter__lamp--green">支払</div>
                     </div>
                 </div>
             </section>
 
+            <!-- 各ツールボタン -->
             <section class="controls">
                 <button class="btn controls__btn" id="btnGoHome">
                     <span></span>
@@ -101,6 +133,7 @@
 
             </section>
 
+            <!-- 出勤退勤時間の表示エリア -->
             <section class="info">
                 <div class="time-calc">
                     <div class="time-calc__input">
@@ -130,11 +163,11 @@
                 </div>
             </section>
 
+
         </div>
     </main>
 
-    <!-- JS -->
-    <script src="./js/app.js"></script>
+
 
     <!-- Service Worker -->
     <script>
@@ -142,6 +175,38 @@
             navigator.serviceWorker.register('./service-worker.js');
         }
     </script>
+
+    <!-- firestoreデータベースの組み込み -->
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+        import {
+            getFirestore,
+            collection,
+            addDoc,
+            getDocs
+        } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+
+        //firebaseに接続するために必要な情報群
+        const firebaseConfig = {
+            apiKey: "AIzaSyBgBvARs1SFjkJQzRxj843MhrfVvBjaVjY",
+            authDomain: "taxi-meter-pwa.firebaseapp.com",
+            projectId: "taxi-meter-pwa",
+            storageBucket: "taxi-meter-pwa.firebasestorage.app",
+            messagingSenderId: "214753560501",
+            appId: "1:214753560501:web:d3acf1471098dbe5d2fbfc"
+        };
+
+        // 初期化して app と db を作る
+        const app = initializeApp(firebaseConfig);
+
+    </script>
+
+    <!-- JS -->
+    <script type="module" src="./js/app.js"></script>
 </body>
 
 </html>
