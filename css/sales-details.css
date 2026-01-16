@@ -1,19 +1,140 @@
-
 /* =========================
-    sales-details.html 共通
+    sales-details 共通
 ========================= */
-.sales-details{
-    background-color: #fff;
-    min-height: 800px;
-    padding: 2rem;
+.sales-details {
+    background-color: #f6f7f8;
+    min-height: 100vh;
+    padding: 2rem 1rem;
+    font-size: .95rem;
 }
 
-.sales-details p{
+.sales-details p {
     margin: 0;
 }
 
-.total-table p{
-    border: solid 2px ;
-    padding: 4px;
-    max-width:300px ;
+/* =========================
+    テーブル共通（カード化）
+========================= */
+.day__table {
+    width: 100%;
+    max-width: 720px;
+    margin: 1.5rem auto;
+    border-collapse: collapse;
+    background-color: #fff;
+    border-radius: .5rem;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .08);
+}
+
+/* ヘッダー */
+.day__table th {
+    background-color: #2f3437;
+    color: #fff;
+    font-weight: 600;
+    padding: .75rem;
+    text-align: center;
+    font-size: .85rem;
+    letter-spacing: .08em;
+}
+
+/* 行 */
+.day__table tr {
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.day__table tr:last-child {
+    border-bottom: none;
+}
+
+/* セル */
+.day__table td {
+    padding: .75rem;
+    vertical-align: middle;
+}
+
+/* 日付 */
+.day__table td:first-child {
+    font-weight: 600;
+    color: #333;
+    white-space: nowrap;
+}
+
+/* 金額 */
+.day__table td:nth-child(2),
+.day__table td:nth-child(3) {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+}
+
+/* 税抜は少し控えめ */
+.day__table td:nth-child(3) {
+    color: #555;
+}
+
+/* =========================
+    ホバー（地味だけど効く）
+========================= */
+.day__table tbody tr:hover {
+    background-color: #f3f4f6;
+}
+
+
+/* log */
+.log__inner{
+    margin: 1.5rem 0;
+}
+
+.log__date{
+    background: linear-gradient(transparent 50%, #a7d6ff 50%);
+}
+/* 見出しデザイン */
+h2,
+h3 {
+    position: relative;
+    padding: 0.6em;
+    background: #e0edff;
+    border-radius: 5px;
+}
+
+h2::after,
+h3::after {
+    position: absolute;
+    content: '';
+    top: 100%;
+    left: 30px;
+    border: 15px solid transparent;
+    border-top: 15px solid #e0edff;
+    width: 0;
+    height: 0;
+
+}
+
+
+.day__heading::before {
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    content: "\f1ba";
+    margin-right: 0.5em;
+}
+
+
+.log__heading::before {
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    content: "\f249";
+    margin-right: 0.5em;
+}
+
+
+/* =========================
+    スマホ調整
+========================= */
+@media (max-width: 480px) {
+
+    .day__table th,
+    .day__table td {
+        padding: .6rem .5rem;
+        font-size: .85rem;
+    }
 }

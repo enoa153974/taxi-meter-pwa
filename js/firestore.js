@@ -24,6 +24,12 @@ export async function fetchSales() {
     });
 }
 
+/* ドライバーログ取得 */
+export async function fetchDriverLogs() {
+    const snapshot = await getDocs(collection(db, "driverLogs"));
+    return snapshot.docs.map(doc => doc.data());
+}
+
 /**
  * Firestore に売上データを追加する
  * @param {{amount: number, memo?: string, createdAt?: Date}} data

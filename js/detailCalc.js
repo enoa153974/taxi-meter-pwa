@@ -106,21 +106,22 @@ export function groupByDate(sales) {
     return map;
 }
 
-/* 日別ログ表示用の集計 */
-export function groupLogsByDate(sales) {
+/* driverLogs 日別集計 */
+export function groupDriverLogsByDate(logs) {
     const map = {};
 
-    sales.forEach(({ memo, createdAt }) => {
-        if (!memo) return;
+    logs.forEach(({ note, createdAt }) => {
+        if (!note) return;
 
         const date = formatDate(createdAt);
 
         if (!map[date]) map[date] = [];
-        map[date].push(memo);
+        map[date].push(note);
     });
 
     return map;
 }
+
 
 // 総売上
 export function calcTotal(grouped) {

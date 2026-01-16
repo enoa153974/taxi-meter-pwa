@@ -26,31 +26,31 @@
     </header>
 
     <main class="sales-details">
-        <h1>売上詳細</h1>
+        <h2>売上詳細</h2>
 
         <section class="total-table">
-            <h2 id="period"></h2>
             <p id="totalGross"></p>
             <p id="totalNet"></p>
         </section>
 
-        <section class="day-table">
-            <h3>日別売上</h3>
-            <table>
+        <section class="day">
+            <h3 class="day__heading">日別売上</h3>
+            <table class="day__table">
                 <thead>
                     <tr>
                         <th>日付</th>
                         <th>税込</th>
                         <th>税抜</th>
+                        <th>メモ</th>
                     </tr>
                 </thead>
-                <tbody id="dailySales"></tbody>
+                <tbody id="dailySales" class="daily-sales__table"></tbody>
             </table>
         </section>
 
-        <section class="log-table">
-            <h3>日別ログ</h3>
-            <div id="dailyLogs"></div>
+        <section class="log">
+            <h3 class="log__heading">日別ログ</h3>
+            <div id="dailyLogs" class="log__inner"></div>
         </section>
 
     </main>
