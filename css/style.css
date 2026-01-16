@@ -1,3 +1,4 @@
+
 /* ===== mini reset ===== */
 
 *,
@@ -569,20 +570,7 @@ img {
     }
 }
 
-
-/* =========================
-    sales-details.html 共通
-========================= */
-.sales-details{
-    background-color: #fff;
-    min-height: 800px;
-    padding: 2rem;
-}
-
-.sales-details p{
-    margin: 0;
-}
-/* ===== utility ===== */
-.hidden {
-    display: none !important;
+/* 共通ユーティリティ */
+.hidden{
+    display: none;
 }

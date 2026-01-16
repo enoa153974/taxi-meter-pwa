@@ -8,6 +8,8 @@
 
     <!-- 共通CSS -->
     <link rel="stylesheet" href="./css/style.css" />
+    <!-- ぺーj固有のCSS -->
+    <link rel="stylesheet" href="./css/sales-details.css" />
 
     <!-- Font Awesome（戻るアイコンなどで使える） -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
@@ -24,9 +26,33 @@
     </header>
 
     <main class="sales-details">
+        <h1>売上詳細</h1>
 
-        <p>ただいま準備中・・・</p>
-        <p>しばらくお待ちください</p>
+        <section class="total-table">
+            <h2 id="period"></h2>
+            <p id="totalGross"></p>
+            <p id="totalNet"></p>
+        </section>
+
+        <section class="day-table">
+            <h3>日別売上</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>日付</th>
+                        <th>税込</th>
+                        <th>税抜</th>
+                    </tr>
+                </thead>
+                <tbody id="dailySales"></tbody>
+            </table>
+        </section>
+
+        <section class="log-table">
+            <h3>日別ログ</h3>
+            <div id="dailyLogs"></div>
+        </section>
+
     </main>
 
     <!-- footer -->
@@ -38,5 +64,7 @@
     </footer>
 
 </body>
+
+<script type="module" src="./js/sales-details.js"></script>
 
 </html>

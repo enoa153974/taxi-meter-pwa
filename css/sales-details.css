@@ -1,0 +1,19 @@
+
+/* =========================
+    sales-details.html 共通
+========================= */
+.sales-details{
+    background-color: #fff;
+    min-height: 800px;
+    padding: 2rem;
+}
+
+.sales-details p{
+    margin: 0;
+}
+
+.total-table p{
+    border: solid 2px ;
+    padding: 4px;
+    max-width:300px ;
+}

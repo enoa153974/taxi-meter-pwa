@@ -70,8 +70,9 @@ export async function loadSalesSummary() {
     sales.forEach(data => {
         if (!data.createdAt) {
             console.warn("createdAtなしのデータ:", data);
-            return;} 
-            if (typeof data.memo !== "string") return;
+            return;
+        }
+        if (typeof data.memo !== "string") return;
         const createdAt =
             data.createdAt instanceof Date
                 ? data.createdAt

@@ -18,18 +18,24 @@ const saveMsg = document.getElementById("saveMessage");
 // ===============================
 // 実車パネルに売上集計を表示(今月度の)
 // ===============================
+async function initSummary() {
+    const summaryEl = document.getElementById("summaryAmount");
+    if (!summaryEl) return;
 
-const summaryEl = document.getElementById("summaryAmount");
-summaryEl.textContent = "読み込み中…";
+    summaryEl.textContent = "読み込み中…";
 
-try {
-    const total = await loadSalesSummary();
-    summaryEl.textContent = `今月度累計：${total.toLocaleString()}円`;
-} catch (e) {
-    summaryEl.textContent = "読み込みに失敗しました🥲";
-    console.error(e);
+    try {
+        const total = await loadSalesSummary();
+        summaryEl.textContent = `今月度累計：${total.toLocaleString()}円`;
+    } catch (e) {
+        summaryEl.textContent = "読み込みに失敗しました🥲";
+        console.error(e);
+    }
 }
 
+document.addEventListener("DOMContentLoaded", () => {
+    initSummary();
+});
 
 
 // ===============================
@@ -187,9 +193,12 @@ setInterval(updateCurrentTime, 1000);
     応援コメント（ランダム）
 ========================= */
 document.addEventListener('DOMContentLoaded', () => {
+    console.log("LED DOMContentLoaded fired");
     const line1 = document.getElementById('ledLine1');
     const line2 = document.getElementById('ledLine2');
     if (!line1 || !line2) return;
+
+    line1.textContent = "LEDテスト表示";
 
     const messages = [
         '今日も安全運転で！',
@@ -201,7 +210,6 @@ document.addEventListener('DOMContentLoaded', () => {
         '安心安全な運転を！'
     ];
 
-    const rollCallDays = [10, 11, 21, 22]; // 一斉点呼の日
 
     // 🎯 応援コメントを更新する関数
     function setRandomMessage() {
@@ -209,8 +217,10 @@ document.addEventListener('DOMContentLoaded', () => {
             messages[Math.floor(Math.random() * messages.length)];
     }
 
+
     // 🎯 一斉点呼の日判定
     function checkRollCall() {
+        const rollCallDays = [10, 11, 21, 22]; // 一斉点呼の日
         const today = new Date();
         const tomorrow = today.getDate() + 1;
 
@@ -221,6 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
             line2.style.display = 'none';
         }
     }
+
 
     // 🌟 初回実行
     setRandomMessage();
