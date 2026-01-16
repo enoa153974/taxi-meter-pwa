@@ -100,6 +100,7 @@ function backToHome() {
 
 /* 実車ボタン押下後に表示される詳細ボタンを押すと、売上集計ページに移管する処理 */
 document.getElementById("btnDetails")?.addEventListener("click", () => {
+    navigator.vibrate?.(50);
     location.href = "./sales-details.html";
 });
 

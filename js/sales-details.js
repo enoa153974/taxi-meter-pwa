@@ -68,6 +68,7 @@ async function render() {
     /* ===== 売上メモのクリック表示 ===== */
     document.querySelectorAll(".memo-btn").forEach(btn => {
         btn.addEventListener("click", () => {
+            navigator.vibrate?.(50);
             const date = btn.dataset.date;
 
             const memos = sales
