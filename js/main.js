@@ -1,79 +1,36 @@
-'use strict';
+
+import { loadSalesSummary } from "./detailCalc.js";
+import { addSale, addDriverLog } from "./firestore.js";
+
 let currentPanel = "time";//状態
-/* firestoreデータベースをインポート */
-
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs }
-    from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
-
-//firebaseに接続するために必要な情報群
-const firebaseConfig = {
-    apiKey: "AIzaSyBgBvARs1SFjkJQzRxj843MhrfVvBjaVjY",
-    authDomain: "taxi-meter-pwa.firebaseapp.com",
-    projectId: "taxi-meter-pwa",
-    storageBucket: "taxi-meter-pwa.firebasestorage.app",
-    messagingSenderId: "214753560501",
-    appId: "1:214753560501:web:d3acf1471098dbe5d2fbfc"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
 
 // ===============================
 // 空車・実車・支払パネルのボタンの取得
 // ===============================
 //支払いパネルの必要ボタン取得
 const payBtn = document.getElementById("payBtn");
-const payForm = document.getElementById("payForm");
 const saveBtn = document.getElementById("saveSales");
 const amountInput = document.getElementById("salesAmount");
 const memoInput = document.getElementById("salesMemo");
 const saveMsg = document.getElementById("saveMessage");
 
 
-//空車パネルの必要ボタン取得
-const kuushaBtn = document.getElementById("kuushaBtn");
-const kuushaForm = document.getElementById("kuushaForm");
-
 // ===============================
-// 空車・実車・支払パネルの関数定義
+// 実車パネルに売上集計を表示(今月度の)
 // ===============================
 
-/* 実車（集計）パネル表示 */
-async function showsummaryPanel() {
-    document.getElementById("summaryPanel").classList.remove("hidden");
-    document.getElementById("payForm").classList.add("hidden");
-    document.getElementById("logForm").classList.add("hidden");
+const summaryEl = document.getElementById("summaryAmount");
+summaryEl.textContent = "読み込み中…";
 
-    // ===============================
-    // 実車パネルに売上集計を表示
-    // ===============================
-
-    const summaryEl = document.getElementById("summaryAmount");
-    summaryEl.textContent = "読み込み中…";
-
-    try {
-        const total = await loadSalesSummary();
-        summaryEl.textContent = `今月度累計：${total.toLocaleString()}円`;
-    } catch (e) {
-        summaryEl.textContent = "読み込みに失敗しました🥲";
-        console.error(e);
-    }
-
+try {
+    const total = await loadSalesSummary();
+    summaryEl.textContent = `今月度累計：${total.toLocaleString()}円`;
+} catch (e) {
+    summaryEl.textContent = "読み込みに失敗しました🥲";
+    console.error(e);
 }
 
-/* 全て閉じる関数 */
-function backToHome() {
-    document.getElementById("logForm")?.classList.add("hidden");
-    document.getElementById("payForm")?.classList.add("hidden");
-    document.getElementById("summaryPanel")?.classList.add("hidden");
-}
 
-/* 実車ボタン押下後に表示される詳細ボタンを押すと、売上集計ページに移管する処理 */
-document.getElementById("btnDetails")?.addEventListener("click", () => {
-    location.href = "./sales-details.html";
-});
 
 // ===============================
 // メーターパネルの表示切替関数
@@ -107,7 +64,6 @@ summaryBtn.addEventListener("click", async () => {
         switchMeterView("meterTime");
     } else {
         switchMeterView("summaryPanel");
-        await showsummaryPanel();
     }
 });
 
@@ -128,7 +84,25 @@ function backToMeterTime() {
 }
 
 
-// ======= 空車ログ 保存処理 =======
+
+/* 全て閉じる関数 */
+function backToHome() {
+    document.getElementById("logForm")?.classList.add("hidden");
+    document.getElementById("payForm")?.classList.add("hidden");
+    document.getElementById("summaryPanel")?.classList.add("hidden");
+}
+
+/* 実車ボタン押下後に表示される詳細ボタンを押すと、売上集計ページに移管する処理 */
+document.getElementById("btnDetails")?.addEventListener("click", () => {
+    location.href = "./sales-details.html";
+});
+
+
+
+// ===============================
+// ログフォーム保存処理
+// ===============================
+
 const saveLogBtn = document.getElementById("saveLogBtn");
 const logInput = document.getElementById("logInput");
 
@@ -142,10 +116,7 @@ if (saveLogBtn) {
         }
 
         try {
-            await addDoc(collection(db, "driverLogs"), {
-                note: note,
-                createdAt: new Date()
-            });
+            await addDriverLog(note);
 
             alert("🚕 ログ書き込みました！");
             logInput.value = ""; // 入力リセット
@@ -159,83 +130,12 @@ if (saveLogBtn) {
     });
 }
 
-/* =========================
-    実車ボタン（集計データの表示＆移管）
-========================= */
-// ===============================
-// 月度判定（21日スタート）
-// ===============================
-function getBillingPeriod(date = new Date()) {
-    const d = new Date(date);
-
-    // ==========================
-    //  特例期間（必要ならここに追記）
-    // ==========================
-    const specialRanges = [
-        // 【2月度】 2026/1/21〜2026/2/19
-        { start: new Date(2026, 0, 21), end: new Date(2026, 1, 19) },
-
-        // 【3月度】 2026/2/20〜2026/3/21
-        { start: new Date(2026, 1, 20), end: new Date(2026, 2, 21) },
-
-        // 【4月度】 2026/3/22〜2026/4/20
-        { start: new Date(2026, 2, 22), end: new Date(2026, 3, 20) }
-    ];
-
-    // 今日が特例に含まれるかチェック
-    for (const r of specialRanges) {
-        if (d >= r.start && d <= r.end) {
-            return r;
-        }
-    }
-
-    // ==========================
-    //  通常ルール（21日〜翌20日）
-    // ==========================
-    const year = d.getFullYear();
-    const month = d.getMonth(); // 0=1月
-
-    // 今日が21日以降なら今月開始
-    const start = new Date(year, month, 21);
-
-    // 今日が20日以前なら前月開始
-    if (d.getDate() < 21) {
-        start.setMonth(start.getMonth() - 1);
-    }
-
-    // 終了は開始の翌月20日
-    const end = new Date(start);
-    end.setMonth(end.getMonth() + 1);
-    end.setDate(20);
-
-    return { start, end };
-}
-
-//firestoreから期間内だけ合計を出す関数
-async function loadSalesSummary() {
-    const { start, end } = getBillingPeriod();
-    let total = 0;
-
-    const snapshot = await getDocs(collection(db, "sales"));
-
-    snapshot.forEach((doc) => {
-        const data = doc.data();
-        const createdAt = data.createdAt.toDate(); // Timestamp → Date
-        if (createdAt >= start && createdAt <= end) {
-            total += Number(data.amount) || 0;
-        }
-    });
-
-    return total;
-}
-
-
 
 // ===============================
 // 支払いフォーム表示/保存処理
 // ===============================
 
-// ⭐ 保存ボタン押したら Firestore に追加
+// ⭐ 保存ボタン押したら Firestore に売上を追加
 saveBtn.addEventListener("click", async () => {
     const amount = Number(amountInput.value);
     const memo = memoInput.value || "";
@@ -247,7 +147,7 @@ saveBtn.addEventListener("click", async () => {
     }
 
     try {
-        await addDoc(collection(db, "sales"), {
+        await addSale({
             amount,
             memo,
             createdAt: new Date()
@@ -265,7 +165,6 @@ saveBtn.addEventListener("click", async () => {
         console.error(e);
     }
 });
-
 
 
 /* =========================
