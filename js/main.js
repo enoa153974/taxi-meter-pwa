@@ -268,6 +268,7 @@ document.getElementById('btnMap')?.addEventListener('click', () => {
     location.href = 'https://www.google.com/maps';
 });
 
+/* 翻訳ボタン */
 const translateBtn = document.getElementById('btnTranslate');
 
 let pressTimer = null;
