@@ -7,16 +7,17 @@ let currentPanel = "time";//状態
 // ===============================
 // AudioContext（最初の操作で一度だけ初期化）
 // ===============================
-let audioCtx = null;
-
-function initAudioContext() {
-    if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
+// ===== メーター音 =====
+const meterSound = new Audio('../sounds/meter_sound.wav');
+meterSound.preload = 'auto';
+/* メーター音再生用の関数 */
+function playMeterSound() {
+    meterSound.currentTime = 0; // 連打対策
+    meterSound.play().catch(() => {
+        // autoplay制限対策（基本は出ない）
+        console.warn('音声再生がブロックされました');
+    });
 }
-
-document.addEventListener('touchstart', initAudioContext, { once: true });
-document.addEventListener('mousedown', initAudioContext, { once: true });
 /* =========================
     UIユーティリティ
 ========================= */
@@ -141,7 +142,7 @@ setupPressAction({
     },
 
     longPress: () => {
-        playSuperSignSequence();
+        playMeterSound();//メーター音の再生
         openFakeMeter();
     },
 
@@ -388,6 +389,13 @@ function closeFakeMeter() {
 //戻るボタンの挙動
 document.getElementById('fakeCloseBtn')?.addEventListener('click', closeFakeMeter);
 
+document.addEventListener('touchstart', () => {
+    meterSound.play().then(() => {
+        meterSound.pause();
+        meterSound.currentTime = 0;
+    });
+}, { once: true });
+
 //支払ボタンの挙動
 document.getElementById('fakeStopBtn')?.addEventListener('click', () => {
     if (fakeTimer) {
@@ -395,7 +403,7 @@ document.getElementById('fakeStopBtn')?.addEventListener('click', () => {
         fakeTimer = null;
     }
 
-    playSuperSignSequence();
+    playMeterSound();
     showFakeTotal();
     showThanksMessage();
 });
@@ -414,81 +422,6 @@ function showFakeTotal() {
 
     // 合計金額表示
     amountEl.textContent = `¥${total.toLocaleString()}`;
-}
-
-/* ボタン押した際のスーパーサインの音 */
-function playSuperSignSequence() {
-    if (!audioCtx) return;
-
-    audioCtx.resume();
-    const now = audioCtx.currentTime;
-
-    /* ===== ピッ ===== */
-    const beep = audioCtx.createOscillator();
-    const beepGain = audioCtx.createGain();
-    beep.type = 'square';
-    beep.frequency.value = 2500;
-    beepGain.gain.value = 0.08;
-
-    beep.connect(beepGain).connect(audioCtx.destination);
-    beep.start(now);
-    beep.stop(now + 0.06);
-
-    /* ===== 間（0.8秒） ===== */
-    const MOTOR_START = now + 0.8;
-
-    /* ===== モーター本体（低音） ===== */
-    const motor = audioCtx.createOscillator();
-    motor.type = 'triangle';
-    motor.frequency.setValueAtTime(120, MOTOR_START);
-    motor.frequency.linearRampToValueAtTime(120, MOTOR_START + 1.5);
-
-    /* ===== 回転ムラ（LFO） ===== */
-    const lfo = audioCtx.createOscillator();
-    const lfoGain = audioCtx.createGain();
-    lfo.type = 'sine';
-    lfo.frequency.value = 8;
-    lfoGain.gain.value = 12;
-
-    lfo.connect(lfoGain);
-    lfoGain.connect(motor.frequency);
-
-    /* ===== ノイズ ===== */
-    const bufferSize = audioCtx.sampleRate * 2;
-    const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-    const noiseData = noiseBuffer.getChannelData(0);
-
-    for (let i = 0; i < bufferSize; i++) {
-        noiseData[i] = (Math.random() * 2 - 1) * 0.15;
-    }
-
-    const noise = audioCtx.createBufferSource();
-    noise.buffer = noiseBuffer;
-    noise.loop = true;
-
-    const noiseGain = audioCtx.createGain();
-    noiseGain.gain.value = 0.03;
-    noise.connect(noiseGain);
-
-    /* ===== 音量制御 ===== */
-    const gain = audioCtx.createGain();
-    gain.gain.setValueAtTime(0.001, MOTOR_START);
-    gain.gain.linearRampToValueAtTime(0.08, MOTOR_START + 0.3);
-    gain.gain.exponentialRampToValueAtTime(0.001, MOTOR_START + 3.2);
-
-    motor.connect(gain);
-    noiseGain.connect(gain);
-    gain.connect(audioCtx.destination);
-
-    /* ===== 再生 ===== */
-    motor.start(MOTOR_START);
-    lfo.start(MOTOR_START);
-    noise.start(MOTOR_START);
-
-    motor.stop(MOTOR_START + 3.2);
-    lfo.stop(MOTOR_START + 3.2);
-    noise.stop(MOTOR_START + 3.2);
-
 }
 
 /* ボタンが押されたらご利用ありがとうございましたと表示する関数 */
