@@ -31,7 +31,7 @@ function setupPressAction({
     let isLongPress = false;
 
     const onPointerDown = (e) => {
-        e.preventDefault(); // ← これが超重要
+        e.preventDefault();
         isLongPress = false;
 
         pressTimer = setTimeout(() => {

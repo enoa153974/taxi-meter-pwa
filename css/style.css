@@ -448,6 +448,13 @@ img {
 
 
 /* ネタ用実車メーター */
+
+#summaryBtn {
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
 .fake-meter {
     padding: clamp(0.05rem, -0.726rem + 4.14vw, 3rem);
 }
