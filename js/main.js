@@ -27,6 +27,7 @@ function setupPressAction({
     longPress,
     longPressTime = 800
 }) {
+    element.addEventListener('contextmenu', e => e.preventDefault());
     let pressTimer = null;
     let isLongPress = false;
 
