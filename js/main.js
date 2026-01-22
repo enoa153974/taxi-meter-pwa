@@ -5,6 +5,66 @@ import { addSale, addDriverLog } from "./firestore.js";
 let currentPanel = "time";//状態
 
 // ===============================
+// AudioContext（最初の操作で一度だけ初期化）
+// ===============================
+let audioCtx = null;
+
+function initAudioContext() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+}
+
+document.addEventListener('touchstart', initAudioContext, { once: true });
+document.addEventListener('mousedown', initAudioContext, { once: true });
+/* =========================
+    UIユーティリティ
+========================= */
+/* 長押し検知関数（通常タップと長押しで結果を使い分ける用） */
+function setupPressAction({
+    element,
+    shortPress,
+    longPress,
+    longPressTime = 800
+}) {
+    let pressTimer = null;
+    let isLongPress = false;
+
+    const onPointerDown = (e) => {
+        e.preventDefault(); // ← これが超重要
+        isLongPress = false;
+
+        pressTimer = setTimeout(() => {
+            isLongPress = true;
+            navigator.vibrate?.(80);
+            longPress?.();
+        }, longPressTime);
+    };
+
+    const onPointerUp = (e) => {
+        e.preventDefault();
+
+        clearTimeout(pressTimer);
+        pressTimer = null;
+
+        if (!isLongPress) {
+            shortPress?.();
+        }
+    };
+
+    const onPointerCancel = () => {
+        clearTimeout(pressTimer);
+        pressTimer = null;
+        isLongPress = false;
+    };
+
+    element.addEventListener('pointerdown', onPointerDown);
+    element.addEventListener('pointerup', onPointerUp);
+    element.addEventListener('pointercancel', onPointerCancel);
+    element.addEventListener('pointerleave', onPointerCancel);
+}
+
+// ===============================
 // 空車・実車・支払パネルのボタンの取得
 // ===============================
 //支払いパネルの必要ボタン取得
@@ -33,7 +93,10 @@ async function initSummary() {
     }
 }
 
+
+//初期状態（現在の時刻を表示）
 document.addEventListener("DOMContentLoaded", () => {
+    switchMeterView("meterTime"); // ← これを1行足す
     initSummary();
 });
 
@@ -64,14 +127,28 @@ logBtn.addEventListener("click", () => {
 });
 
 // 実車ボタンを押下したときの挙動
-summaryBtn.addEventListener("click", async () => {
-    navigator.vibrate?.(50);
-    if (currentPanel === "summaryPanel") {
-        switchMeterView("meterTime");
-    } else {
-        switchMeterView("summaryPanel");
-    }
+setupPressAction({
+    element: summaryBtn,
+
+    shortPress: () => {
+        navigator.vibrate?.(40);
+        switchMeterView(
+            currentPanel === "summaryPanel"
+                ? "meterTime"
+                : "summaryPanel"
+        );
+    },
+
+    longPress: () => {
+        playSuperSignSequence();
+        openFakeMeter();
+    },
+
+    longPressTime: 700
 });
+
+
+
 
 // 支払ボタンを押下したときの挙動
 payBtn.addEventListener("click", () => {
@@ -244,6 +321,185 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
+/* ネタ用実車メーター （実車ボタン長押しで表示）*/
+function updateMeterDate() {
+    const el = document.getElementById('meterDate');
+    if (!el) return;
+
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+
+    const weeks = ['日', '月', '火', '水', '木', '金', '土'];
+    const w = weeks[d.getDay()];
+
+    el.textContent = `${y}.${m}.${day}（${w}）`;
+}
+
+updateMeterDate();
+
+let fakeTimer = null;
+let fakeSeconds = 0;
+let fakeAmount = 500;
+
+function openFakeMeter() {
+    const meter = document.getElementById('fakeMeter');
+    const amountEl = document.getElementById('fakeAmount');
+    const elapsedEl = document.getElementById('fakeElapsed');
+    const breakdownEl = document.getElementById('fakeBreakdown');
+
+    fakeSeconds = 0;
+    fakeAmount = 500;
+
+    breakdownEl.classList.add('hidden'); // メーター開始時にリセット
+    document.getElementById('fakeThanks')?.classList.add('hidden');
+
+    amountEl.textContent = `¥${fakeAmount.toLocaleString()}`;
+    elapsedEl.textContent = '00:00';
+
+    meter.classList.remove('hidden');
+
+    fakeTimer = setInterval(() => {
+        fakeSeconds++;
+
+        // 30秒ごとに+100円（テンポ良し）
+        if (fakeSeconds % 30 === 0) {
+            fakeAmount += 100;
+            amountEl.textContent = `¥${fakeAmount.toLocaleString()}`;
+        }
+
+        const mm = String(Math.floor(fakeSeconds / 60)).padStart(2, '0');
+        const ss = String(fakeSeconds % 60).padStart(2, '0');
+        elapsedEl.textContent = `${mm}:${ss}`;
+    }, 1000);
+}
+
+function closeFakeMeter() {
+    const meter = document.getElementById('fakeMeter');
+    meter.classList.add('hidden');
+    if (fakeTimer) {
+        clearInterval(fakeTimer);
+        fakeTimer = null;
+    }
+}
+
+//戻るボタンの挙動
+document.getElementById('fakeCloseBtn')?.addEventListener('click', closeFakeMeter);
+
+//支払ボタンの挙動
+document.getElementById('fakeStopBtn')?.addEventListener('click', () => {
+    if (fakeTimer) {
+        clearInterval(fakeTimer);
+        fakeTimer = null;
+    }
+
+    playSuperSignSequence();
+    showFakeTotal();
+    showThanksMessage();
+});
+
+
+function showFakeTotal() {
+    const breakdownEl = document.getElementById('fakeBreakdown');
+    const amountEl = document.getElementById('fakeAmount');
+
+    const PICKUP_FEE = 300;
+    const total = fakeAmount + PICKUP_FEE;
+
+    // 内訳表示
+    breakdownEl.textContent = `迎車料金 +¥${PICKUP_FEE}`;
+    breakdownEl.classList.remove('hidden');
+
+    // 合計金額表示
+    amountEl.textContent = `¥${total.toLocaleString()}`;
+}
+
+/* ボタン押した際のスーパーサインの音 */
+function playSuperSignSequence() {
+    if (!audioCtx) return;
+
+    audioCtx.resume();
+    const now = audioCtx.currentTime;
+
+    /* ===== ピッ ===== */
+    const beep = audioCtx.createOscillator();
+    const beepGain = audioCtx.createGain();
+    beep.type = 'square';
+    beep.frequency.value = 2500;
+    beepGain.gain.value = 0.08;
+
+    beep.connect(beepGain).connect(audioCtx.destination);
+    beep.start(now);
+    beep.stop(now + 0.06);
+
+    /* ===== 間（0.8秒） ===== */
+    const MOTOR_START = now + 0.8;
+
+    /* ===== モーター本体（低音） ===== */
+    const motor = audioCtx.createOscillator();
+    motor.type = 'triangle';
+    motor.frequency.setValueAtTime(120, MOTOR_START);
+    motor.frequency.linearRampToValueAtTime(120, MOTOR_START + 1.5);
+
+    /* ===== 回転ムラ（LFO） ===== */
+    const lfo = audioCtx.createOscillator();
+    const lfoGain = audioCtx.createGain();
+    lfo.type = 'sine';
+    lfo.frequency.value = 8;
+    lfoGain.gain.value = 12;
+
+    lfo.connect(lfoGain);
+    lfoGain.connect(motor.frequency);
+
+    /* ===== ノイズ ===== */
+    const bufferSize = audioCtx.sampleRate * 2;
+    const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const noiseData = noiseBuffer.getChannelData(0);
+
+    for (let i = 0; i < bufferSize; i++) {
+        noiseData[i] = (Math.random() * 2 - 1) * 0.15;
+    }
+
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = noiseBuffer;
+    noise.loop = true;
+
+    const noiseGain = audioCtx.createGain();
+    noiseGain.gain.value = 0.03;
+    noise.connect(noiseGain);
+
+    /* ===== 音量制御 ===== */
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.001, MOTOR_START);
+    gain.gain.linearRampToValueAtTime(0.08, MOTOR_START + 0.3);
+    gain.gain.exponentialRampToValueAtTime(0.001, MOTOR_START + 3.2);
+
+    motor.connect(gain);
+    noiseGain.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    /* ===== 再生 ===== */
+    motor.start(MOTOR_START);
+    lfo.start(MOTOR_START);
+    noise.start(MOTOR_START);
+
+    motor.stop(MOTOR_START + 3.2);
+    lfo.stop(MOTOR_START + 3.2);
+    noise.stop(MOTOR_START + 3.2);
+
+}
+
+/* ボタンが押されたらご利用ありがとうございましたと表示する関数 */
+function showThanksMessage() {
+    const el = document.getElementById('fakeThanks');
+    if (!el) return;
+
+    el.textContent = `ご利用ありがとうございました`;
+    el.classList.remove('hidden');
+}
+
+
 /* =========================
     コントロールパネルの動作
 ========================= */
@@ -271,65 +527,22 @@ document.getElementById('btnMap')?.addEventListener('click', () => {
 /* 翻訳ボタン */
 const translateBtn = document.getElementById('btnTranslate');
 
-let pressTimer = null;
-let isLongPress = false;
-const LONG_PRESS_TIME = 600; // ms
+setupPressAction({
+    element: translateBtn,
 
-function startPressTimer(longPressAction) {
-    isLongPress = false;
-    pressTimer = setTimeout(() => {
-        isLongPress = true;
-        navigator.vibrate?.(80);
-        longPressAction();
-    }, LONG_PRESS_TIME);
-}
-
-function clearPressTimer() {
-    if (pressTimer) {
-        clearTimeout(pressTimer);
-        pressTimer = null;
-    }
-}
-
-/* ===== 長押し開始 ===== */
-translateBtn?.addEventListener('touchstart', () => {
-    startPressTimer(() => {
-        location.href = 'https://translate.google.com/?sl=ja&tl=zh-CN';
-    });
-});
-
-translateBtn?.addEventListener('mousedown', () => {
-    startPressTimer(() => {
-        location.href = 'https://translate.google.com/?sl=ja&tl=zh-CN';
-    });
-});
-
-/* ===== 押すのをやめた ===== */
-translateBtn?.addEventListener('touchend', () => {
-    clearPressTimer();
-
-    // 短タップ判定
-    if (!isLongPress) {
-        navigator.vibrate?.(50);
+    // 短タップ → 英語
+    shortPress: () => {
+        navigator.vibrate?.(40);
         location.href = 'https://translate.google.com/?sl=ja&tl=en';
-    }
+    },
 
-    isLongPress = false;
+    // 長押し → 中国語
+    longPress: () => {
+        location.href = 'https://translate.google.com/?sl=ja&tl=zh-CN';
+    },
+
+    longPressTime: 600
 });
-
-translateBtn?.addEventListener('mouseup', () => {
-    clearPressTimer();
-
-    if (!isLongPress) {
-        navigator.vibrate?.(50);
-        location.href = 'https://translate.google.com/?sl=ja&tl=en';
-    }
-
-    isLongPress = false;
-});
-
-translateBtn?.addEventListener('touchcancel', clearPressTimer);
-translateBtn?.addEventListener('mouseleave', clearPressTimer);
 
 
 /* =========================

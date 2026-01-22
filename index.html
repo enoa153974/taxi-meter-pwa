@@ -163,6 +163,57 @@
                 </div>
             </section>
 
+            <!-- ネタ用メーター 実車ボタン長押しで表示-->
+
+
+            <div id="fakeMeter" class="fake-meter hidden">
+
+                <div class="name__wrap">
+                    <p>三宅交運株式会社</p>
+                    <p>乗務員：三宅</p>
+                </div>
+                <div class="triangle">
+                    <div>▼</div>
+                    <div>▼</div>
+                    <div>▼</div>
+                    <div>▼</div>
+
+                </div>
+                <div class="fake-meter__display">
+                    <div class="fake-meter__display-inner">
+                        <div class="main-display">
+                            <div class="fake-meter__status-wrap">
+                                <p class="fake-meter__status --border-red">実車</p>
+                                <p class="fake-meter__status">貸切</p>
+                                <p class="fake-meter__status">迎車</p>
+                            </div>
+
+                            <div id="fakeBreakdown" class="fake-breakdown hidden">
+                                迎車料金 +¥300
+                            </div>
+                            <div class="fake-meter__amount-wrap">
+                                <span class="fake-meter__amount" id="fakeAmount">650</span>
+                            </div>
+                        </div>
+
+                        <div class="fake-meter__actions">
+                            <button id="fakeStopBtn">支払</button>
+                            <button id="fakeCloseBtn">戻る</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="fake-meter__elapsed-weap">
+                    <p>経過時間</p>
+                    <div class="meter-date" id="meterDate"></div>
+                    <div id="fakeThanks" class="fake-thanks hidden"></div>
+                    <div class="fake-meter__elapsed" id="fakeElapsed">00:00</div>
+                </div>
+
+
+            </div>
+
+
 
         </div>
     </main>

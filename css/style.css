@@ -1,4 +1,3 @@
-
 /* ===== mini reset ===== */
 
 *,
@@ -448,6 +447,225 @@ img {
 }
 
 
+/* ネタ用実車メーター */
+.fake-meter {
+    padding: clamp(0.05rem, -0.726rem + 4.14vw, 3rem);
+}
+
+.name__wrap {
+    margin-right: auto;
+    padding-left: 1rem;
+}
+
+
+.triangle {
+    display: flex;
+    gap: clamp(2.5rem, 0.526rem + 10.53vw, 10rem);
+    margin-right: auto;
+    padding-left: clamp(3rem, 2.474rem + 2.81vw, 5rem);
+    color: #fff;
+    font-size: clamp(1rem, 0.474rem + 2.81vw, 3rem);
+}
+
+.fake-meter__display {
+    position: relative;
+    width: 90%;
+    border: 3px solid #2ea7ff;
+    /* 青 */
+    background: #000;
+    padding: clamp(0.05rem, -0.726rem + 4.14vw, 3rem);
+
+}
+
+.fake-meter__display::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #2ea7ff;
+}
+
+.fake-meter__display-inner {
+    display: flex;
+    justify-content: space-between;
+}
+
+.main-display {
+    padding: .5rem;
+}
+
+.fake-meter {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    color: #0f0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    z-index: 9999;
+}
+
+.fake-meter.hidden {
+    display: none;
+}
+
+.fake-meter__status-wrap {
+    display: flex;
+    gap: .5rem;
+    margin-bottom: 1rem;
+    position: relative;
+}
+
+.fake-meter__status-wrap::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    /* 要素との距離 */
+    bottom: -10px;
+    width: 100%;
+    height: 5px;
+    background: #f0b3b3;
+}
+
+
+.fake-meter__status {
+    display: flex;
+    align-items: center;
+    background: #000;
+    color: #fff;
+    border-left: solid #1f4fff 2px;
+    border-right: solid #1f4fff 2px;
+    border-top: solid #1f4fff 8px;
+    border-bottom: solid #1f4fff 8px;
+    padding: .25rem .5rem;
+    font-size: clamp(0.75rem, 0.158rem + 3.16vw, 3rem);
+    font-weight: 700;
+    letter-spacing: .1em;
+    margin: .25rem 0;
+}
+
+.--border-red {
+    border: solid 10px #d32f2f;
+    font-size: clamp(1rem, 0.474rem + 2.81vw, 3rem);
+    padding: .25rem .5rem;
+
+}
+
+/* 迎車料金表示（支払メーター押下時） */
+.fake-breakdown {
+    font-size: .85rem;
+    color: #f2c6c6;
+    /* あの薄ピンク */
+    text-align: center;
+    margin-bottom: .25rem;
+}
+
+/* 金額部分 */
+.fake-meter__amount-wrap {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: .2rem;
+    position: relative;
+}
+
+/* 金額下線 */
+.fake-meter__amount-wrap::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -1px;
+    /* 要素との距離 */
+    width: 100%;
+    height: 2px;
+    /* 線の太さ */
+    background: #f0b3b3;
+    /* メーター青 */
+}
+
+/* 金額 */
+.fake-meter__amount {
+    font-family: ui-monospace, 'Courier New', monospace;
+    font-size: clamp(3.5rem, 1.789rem + 9.12vw, 10rem);
+    font-weight: 700;
+    letter-spacing: .005em;
+    color: #fff;
+}
+
+/* 経過時間部分 */
+
+.fake-meter__elapsed-weap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.fake-meter__elapsed-weap p {
+    margin: 0;
+    font-weight: 500;
+}
+
+.meter-date {
+    font-size: 1.25rem;
+    color: rgba(255, 255, 255, .75);
+    letter-spacing: .05em;
+    font-family: 'Orbitron', monospace;
+    pointer-events: none;
+    margin-top: 0.5rem;
+
+}
+
+/* ご利用ありがとうございました */
+.fake-thanks {
+    margin-top: .5rem;
+    font-size: 1.5rem;
+    color: #d32f2f;
+    text-align: center;
+    letter-spacing: .05em;
+    text-shadow:
+        1px 1px 0 #eee;
+    font-weight: bold;
+}
+
+/* タイマー表示 */
+.fake-meter__elapsed {
+    margin-top: .8rem;
+    color: #eee;
+    font-size: 1.5rem;
+    opacity: .7;
+    font-weight: bold;
+}
+
+.fake-meter__actions {
+    display: flex;
+    flex-direction: column;
+}
+
+/* 停止、戻るボタン */
+.fake-meter__actions button {
+    writing-mode: vertical-rl;
+    text-orientation: upright;
+    /* 文字を1文字ずつ正立 */
+    margin-bottom: .5rem;
+    padding: .6rem .5rem;
+    background: #000;
+    border-left: solid #ffd400 2px;
+    border-right: solid #ffd400 2px;
+    border-top: solid #ffd400 8px;
+    border-bottom: solid #ffd400 8px;
+    color: #fff;
+    font-weight: 700;
+    text-align: center;
+    font-size: clamp(0.75rem, 0.158rem + 3.16vw, 3rem);
+}
+
+.fake-meter__amount.is-update {
+    text-shadow: 0 0 6px rgba(0, 255, 0, .6);
+}
 
 
 /* =========================
@@ -571,6 +789,6 @@ img {
 }
 
 /* 共通ユーティリティ */
-.hidden{
+.hidden {
     display: none;
 }
