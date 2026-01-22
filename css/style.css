@@ -281,6 +281,7 @@ img {
 /* 今月の売上合計 */
 .summary__text {
     font-size: 1rem;
+
 }
 
 /* 売上金額*/
@@ -798,21 +799,22 @@ img {
     display: none;
 }
 
+
 /* スマホ横画面 */
 @media (orientation: landscape) and (max-height: 500px) {
     .name__panel {
         display: flex;
     }
 
-    .triangle{
-        align-items:end;
-                margin-right: 0;
-                margin-left: 5rem;
+    .triangle {
+        align-items: end;
+        margin-right: 0;
+        margin-left: 5rem;
     }
 
     .fake-meter {
         align-items: center;
-        gap:.5rem;
+        gap: .5rem;
     }
 
     .fake-meter__display {
@@ -829,6 +831,7 @@ img {
         margin-left: 1rem;
         margin-right: 2rem;
     }
+
     .meter-date {
         margin: 0;
     }

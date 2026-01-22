@@ -87,7 +87,7 @@ async function initSummary() {
 
     try {
         const total = await loadSalesSummary();
-        summaryEl.textContent = `今月度累計：${total.toLocaleString()}円`;
+        summaryEl.textContent = `今月度累計(税抜)\n${total.net.toLocaleString()}円`;
     } catch (e) {
         summaryEl.textContent = "読み込みに失敗しました🥲";
         console.error(e);

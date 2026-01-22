@@ -8,13 +8,22 @@ export function formatDate(date) {
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, "0");
     const day = String(d.getDate()).padStart(2, "0");
-    return `${y}-${m}-${day}`;
+    return `${y}.${m}.${day}（${getWeekday(d)}）`;
 }
+
+/* 曜日を返すユーティリティ関数 */
+export function getWeekday(date) {
+    const d = date instanceof Date ? date : date.toDate();
+    const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+    return weekdays[d.getDay()];
+}
+
+
 
 // ===============================
 // 月度判定（21日スタート）
 // ===============================
-function getBillingPeriod(date = new Date()) {
+export function getBillingPeriod(date = new Date()) {
     const d = new Date(date);
 
     // ==========================
@@ -61,9 +70,12 @@ function getBillingPeriod(date = new Date()) {
 }
 
 //firestoreから期間内だけ合計を出す関数
+// firestoreから期間内だけ合計を出す関数（税抜・税込）
 export async function loadSalesSummary() {
     const { start, end } = getBillingPeriod();
-    let total = 0;
+
+    let gross = 0; // 税込
+    let net = 0;   // 税抜
 
     const sales = await fetchSales();
 
@@ -72,18 +84,20 @@ export async function loadSalesSummary() {
             console.warn("createdAtなしのデータ:", data);
             return;
         }
-        if (typeof data.memo !== "string") return;
+
         const createdAt =
             data.createdAt instanceof Date
                 ? data.createdAt
                 : data.createdAt.toDate();
 
         if (createdAt >= start && createdAt <= end) {
-            total += Number(data.amount) || 0;
+            const amount = Number(data.amount) || 0;
+            gross += amount;
+            net += Math.floor(amount / 1.1);
         }
     });
 
-    return total;
+    return { gross, net };
 }
 
 
