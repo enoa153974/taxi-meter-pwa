@@ -79,7 +79,7 @@ async function render() {
 
             const tr = document.createElement("tr");
             tr.innerHTML = `
-            <td>${date}（${weekday}）</td>
+            <td>${date}</td>
             <td>${data.gross.toLocaleString()}円</td>
             <td>${data.net.toLocaleString()}円</td>
             <td class="memo-cell">
@@ -107,7 +107,7 @@ async function render() {
             const div = document.createElement("div");
             div.innerHTML = `
             <strong class="log__date">
-                ${date}（${weekday}）
+                ${date}
             </strong>
             <ul>
                 ${items.map(t => `<li>${t}</li>`).join("")}
