@@ -461,7 +461,6 @@ img {
 
 .name__wrap {
     margin-right: auto;
-    padding-left: 1rem;
 }
 
 
@@ -469,7 +468,6 @@ img {
     display: flex;
     gap: clamp(2.5rem, 0.526rem + 10.53vw, 10rem);
     margin-right: auto;
-    padding-left: clamp(3rem, 2.474rem + 2.81vw, 5rem);
     color: #fff;
     font-size: clamp(1rem, 0.474rem + 2.81vw, 3rem);
 }
@@ -597,14 +595,13 @@ img {
 /* 金額 */
 .fake-meter__amount {
     font-family: ui-monospace, 'Courier New', monospace;
-    font-size: clamp(3.5rem, 1.789rem + 9.12vw, 10rem);
+    font-size: clamp(3.5rem, 2.842rem + 3.51vw, 6rem);
     font-weight: 700;
     letter-spacing: .005em;
     color: #fff;
 }
 
 /* 経過時間部分 */
-
 .fake-meter__elapsed-weap {
     display: flex;
     flex-direction: column;
@@ -795,7 +792,56 @@ img {
     }
 }
 
+
 /* 共通ユーティリティ */
 .hidden {
     display: none;
+}
+
+/* スマホ横画面 */
+@media (orientation: landscape) and (max-height: 500px) {
+    .name__panel {
+        display: flex;
+    }
+
+    .name__wrap {
+
+    }
+
+    .triangle{
+        align-items:end;
+                margin-right: 0;
+                margin-left: 5rem;
+    }
+
+    .fake-meter {
+        align-items: center;
+        gap:.5rem;
+    }
+
+    .fake-meter__display {
+        padding: .25rem;
+
+    }
+
+    .fake-meter__elapsed-weap {
+        flex-direction: row;
+        gap: 1.25rem;
+    }
+
+    .fake-meter__elapsed-weap p {
+        margin-left: 1rem;
+        margin-right: 2rem;
+    }
+    .meter-date {
+        margin: 0;
+    }
+
+    .fake-meter__elapsed {
+        margin: 0;
+    }
+
+    .fake-thanks {
+        margin-top: 0;
+    }
 }
