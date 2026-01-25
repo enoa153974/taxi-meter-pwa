@@ -4,7 +4,7 @@ import {
     calcTotal,
     formatDate,
     getBillingPeriod,
-    getWeekday
+    getBusinessDateForCalc
 } from "./detailCalc.js";
 import { fetchSales, fetchDriverLogs } from "./firestore.js";
 
@@ -14,7 +14,7 @@ async function render() {
 
     // ★ 月度期間を取得
     const { start, end } = getBillingPeriod();
-    
+
     //対象期間の表示
     const periodEl = document.getElementById("billingPeriod");
     if (periodEl) {
@@ -24,22 +24,14 @@ async function render() {
 
     // ★ 月度内の売上だけに絞る
     const sales = allSales.filter(s => {
-        const createdAt =
-            s.createdAt instanceof Date
-                ? s.createdAt
-                : s.createdAt.toDate();
-
-        return createdAt >= start && createdAt <= end;
+        const businessDate = getBusinessDateForCalc(s);
+        return businessDate >= start && businessDate <= end;
     });
 
     //月度内のログだけに絞る
     const logs = driverLogs.filter(l => {
-        const createdAt =
-            l.createdAt instanceof Date
-                ? l.createdAt
-                : l.createdAt.toDate();
-
-        return createdAt >= start && createdAt <= end;
+        const businessDate = getBusinessDateForCalc(l);
+        return businessDate >= start && businessDate <= end;
     });
 
 
@@ -64,18 +56,12 @@ async function render() {
         .sort(([dateA], [dateB]) => dateB.localeCompare(dateA))
         .forEach(([date, data]) => {
 
-            // ★ 曜日取得（この日付の売上データから1件拾う）
-            const sample = sales.find(
-                s => formatDate(s.createdAt) === date
-            );
-            const weekday = sample
-                ? getWeekday(sample.createdAt)
-                : "";
 
             // ★ この日付に売上メモがあるか判定
-            const hasMemo = sales.some(
-                s => formatDate(s.createdAt) === date && s.memo
-            );
+            const hasMemo = sales.some(s => {
+                const d = formatDate(getBusinessDateForCalc(s));
+                return d === date && s.memo;
+            });
 
             const tr = document.createElement("tr");
             tr.innerHTML = `
@@ -96,36 +82,28 @@ async function render() {
     Object.entries(logsByDate)
         .sort(([a], [b]) => b.localeCompare(a))
         .forEach(([date, items]) => {
-
-            const sample = logs.find(
-                l => formatDate(l.createdAt) === date
-            );
-            const weekday = sample
-                ? getWeekday(sample.createdAt)
-                : "";
-
             const div = document.createElement("div");
             div.innerHTML = `
-            <strong class="log__date">
-                ${date}
-            </strong>
-            <ul>
-                ${items.map(t => `<li>${t}</li>`).join("")}
-            </ul>
-        `;
+<strong class="log__date">
+${date}
+</strong>
+<ul>
+${items.map(t => `<li>${t}</li>`).join("")}
+</ul>
+`;
             logsEl.appendChild(div);
-        });
-
-    /* ===== 売上メモのクリック表示 ===== */
+        });    /* ===== 売上メモのクリック表示 ===== */
     document.querySelectorAll(".memo-btn").forEach(btn => {
         btn.addEventListener("click", () => {
             navigator.vibrate?.(50);
             const date = btn.dataset.date;
 
             const memos = sales
-                .filter(s => formatDate(s.createdAt) === date && s.memo)
+                .filter(s => {
+                    const d = formatDate(getBusinessDateForCalc(s));
+                    return d === date && s.memo;
+                })
                 .map(s => s.memo);
-
             alert(
                 memos.length
                     ? memos.join("\n")

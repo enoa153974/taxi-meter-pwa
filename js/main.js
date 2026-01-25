@@ -1,5 +1,5 @@
 
-import { loadSalesSummary } from "./detailCalc.js";
+import { loadSalesSummary , calcBusinessDateForSave} from "./detailCalc.js";
 import { addSale, addDriverLog } from "./firestore.js";
 
 let currentPanel = "time";//状態
@@ -202,7 +202,11 @@ if (saveLogBtn) {
         }
 
         try {
-            await addDriverLog(note);
+            await addDriverLog({
+                note,
+                createdAt: new Date(),
+                businessDate: calcBusinessDateForSave()
+            });
 
             alert("🚕 ログ書き込みました！");
             logInput.value = ""; // 入力リセット
@@ -236,7 +240,8 @@ saveBtn.addEventListener("click", async () => {
         await addSale({
             amount,
             memo,
-            createdAt: new Date()
+            createdAt: new Date(),
+            businessDate: calcBusinessDateForSave()
         });
 
         alert("売上入力完了！\n本日も一日おつかれさまでした！\n気をつけて帰ってきてね！");
@@ -616,8 +621,8 @@ document.addEventListener('DOMContentLoaded', () => {
 function getWorkDate(date) {
     const d = new Date(date);
 
-    // 深夜0:00〜3:59は前日の業務日扱い
-    if (d.getHours() < 4) {
+    // 深夜0:00〜4:59は前日の業務日扱い
+    if (d.getHours() < 5) {
         d.setDate(d.getDate() - 1);
     }
 

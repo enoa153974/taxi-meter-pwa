@@ -69,28 +69,65 @@ export function getBillingPeriod(date = new Date()) {
     return { start, end };
 }
 
+
+//保存用
+export function calcBusinessDateForSave(date = new Date()) {
+    const d = new Date(date);
+
+    // AM0〜4時なら前日扱い
+    if (d.getHours() < 5) {
+        d.setDate(d.getDate() - 1);
+    }
+
+    // 時刻を切り落として日付だけに
+    d.setHours(0, 0, 0, 0);
+
+    return d;
+}
+
+// 集計用（旧データ対応）
+export function getBusinessDateForCalc(data) {
+    // ① 新データ：businessDate があれば最優先
+    if (data.businessDate) {
+        const d = data.businessDate instanceof Date
+            ? data.businessDate
+            : data.businessDate.toDate();
+
+        d.setHours(0, 0, 0, 0);
+        return d;
+    }
+
+    // ② 旧データ：createdAt から営業日を計算（AM5ルール適用）
+    if (!data.createdAt) return null;
+
+    const d = data.createdAt instanceof Date
+        ? new Date(data.createdAt)
+        : new Date(data.createdAt.toDate());
+
+    // ⭐ ここが今まで無かった
+    if (d.getHours() < 5) {
+        d.setDate(d.getDate() - 1);
+    }
+
+    d.setHours(0, 0, 0, 0);
+    return d;
+}
 //firestoreから期間内だけ合計を出す関数
 // firestoreから期間内だけ合計を出す関数（税抜・税込）
 export async function loadSalesSummary() {
     const { start, end } = getBillingPeriod();
 
-    let gross = 0; // 税込
-    let net = 0;   // 税抜
+    let gross = 0;
+    let net = 0;
 
     const sales = await fetchSales();
 
     sales.forEach(data => {
-        if (!data.createdAt) {
-            console.warn("createdAtなしのデータ:", data);
-            return;
-        }
+        if (!data.createdAt) return;
 
-        const createdAt =
-            data.createdAt instanceof Date
-                ? data.createdAt
-                : data.createdAt.toDate();
+        const businessDate = getBusinessDateForCalc(data);
 
-        if (createdAt >= start && createdAt <= end) {
+        if (businessDate >= start && businessDate <= end) {
             const amount = Number(data.amount) || 0;
             gross += amount;
             net += Math.floor(amount / 1.1);
@@ -106,8 +143,11 @@ export async function loadSalesSummary() {
 export function groupByDate(sales) {
     const map = {};
 
-    sales.forEach(({ amount, createdAt }) => {
-        const date = formatDate(createdAt);
+    sales.forEach(data => {
+        const amount = Number(data.amount) || 0;
+
+        const businessDate = getBusinessDateForCalc(data);
+        const date = formatDate(businessDate);
 
         if (!map[date]) {
             map[date] = { gross: 0, net: 0 };
@@ -123,14 +163,14 @@ export function groupByDate(sales) {
 /* driverLogs 日別集計 */
 export function groupDriverLogsByDate(logs) {
     const map = {};
+    logs.forEach(data => {
+        if (!data.note) return;
 
-    logs.forEach(({ note, createdAt }) => {
-        if (!note) return;
-
-        const date = formatDate(createdAt);
+        const businessDate = getBusinessDateForCalc(data);
+        const date = formatDate(businessDate);
 
         if (!map[date]) map[date] = [];
-        map[date].push(note);
+        map[date].push(data.note);
     });
 
     return map;
