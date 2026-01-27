@@ -160,9 +160,10 @@ export function groupByDate(sales) {
     return map;
 }
 
-/* driverLogs 日別集計 */
+/* driverLogs 日別集計（旧データ吸収対応） */
 export function groupDriverLogsByDate(logs) {
     const map = {};
+
     logs.forEach(data => {
         if (!data.note) return;
 
@@ -170,7 +171,14 @@ export function groupDriverLogsByDate(logs) {
         const date = formatDate(businessDate);
 
         if (!map[date]) map[date] = [];
-        map[date].push(data.note);
+
+        // 👇 ここが肝
+        const text =
+            typeof data.note === "string"
+                ? data.note
+                : data.note.note ?? JSON.stringify(data.note);
+
+        map[date].push(text);
     });
 
     return map;
