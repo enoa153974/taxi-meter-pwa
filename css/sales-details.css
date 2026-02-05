@@ -14,9 +14,10 @@
 
 /* 売上詳細 */
 .total-gross,
-.total-net{
+.total-net {
     font-weight: 700;
 }
+
 /* =========================
     テーブル共通（カード化）
 ========================= */
@@ -64,6 +65,30 @@
     white-space: nowrap;
 }
 
+.date-cell {
+    display: flex;
+    flex-direction: column;
+    gap: .25rem;
+}
+
+.date-cell .date {
+    font-weight: 600;
+}
+
+.date-cell .work-time {
+    font-size: .75rem;
+    color: #555;
+}
+
+.date-cell .work-time::before {
+    content: "⏱ ";
+}
+
+.date-cell .work-time.unrecorded {
+    color: #c00;
+    font-weight: 500;
+}
+
 /* 金額 */
 .day__table td:nth-child(2),
 .day__table td:nth-child(3) {
@@ -78,7 +103,7 @@
 }
 
 /* =========================
-    ホバー（地味だけど効く）
+    ホバー
 ========================= */
 .day__table tbody tr:hover {
     background-color: #f3f4f6;
@@ -86,13 +111,14 @@
 
 
 /* log */
-.log__inner{
+.log__inner {
     margin: 1.5rem 0;
 }
 
-.log__date{
+.log__date {
     background: linear-gradient(transparent 50%, #a7d6ff 50%);
 }
+
 /* 見出しデザイン */
 h2,
 h3 {

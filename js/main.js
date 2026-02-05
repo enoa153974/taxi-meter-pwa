@@ -1,5 +1,5 @@
 
-import { loadSalesSummary , calcBusinessDateForSave} from "./detailCalc.js";
+import { loadSalesSummary, calcBusinessDateForSave } from "./detailCalc.js";
 import { addSale, addDriverLog } from "./firestore.js";
 
 let currentPanel = "time";//状態
@@ -220,7 +220,6 @@ if (saveLogBtn) {
     });
 }
 
-
 // ===============================
 // 支払いフォーム表示/保存処理
 // ===============================
@@ -229,8 +228,24 @@ if (saveLogBtn) {
 saveBtn.addEventListener("click", async () => {
     const amount = Number(amountInput.value);
     const memo = memoInput.value || "";
+    const now = new Date();
 
-    // 入力チェック
+    const startTimeStr = localStorage.getItem('taxi_start_time');
+    const workDateStr = localStorage.getItem('taxi_work_date');
+    const hasWorkStart = !!(startTimeStr && workDateStr);
+
+    let workStartAt = null;
+    let workMinutes = null;
+
+    if (hasWorkStart) {
+        const [h, m] = startTimeStr.split(':').map(Number);
+
+        workStartAt = new Date(`${workDateStr}T00:00:00`);
+        workStartAt.setHours(h, m, 0, 0);
+
+        workMinutes = Math.floor((now - workStartAt) / 60000);
+    }
+
     if (!amount) {
         saveMsg.textContent = "※金額を入力してください";
         return;
@@ -240,23 +255,35 @@ saveBtn.addEventListener("click", async () => {
         await addSale({
             amount,
             memo,
-            createdAt: new Date(),
-            businessDate: calcBusinessDateForSave()
+            createdAt: now,
+            businessDate: workDateStr,
+
+            workStartAt,
+            workEndAt: now,
+            workMinutes
         });
 
-        alert("売上入力完了！\n本日も一日おつかれさまでした！\n気をつけて帰ってきてね！");
+        let message = "売上入力完了！\n本日も一日おつかれさまでした！";
+        if (!hasWorkStart) {
+            message += "\n\n⚠ 出勤時間が未入力のため、稼働時間は記録されていません。";
+        }
+
+        alert(message);
+
         amountInput.value = "";
         memoInput.value = "";
+
+        localStorage.removeItem('taxi_start_time');
+        localStorage.removeItem('taxi_work_date');
+
         backToHome();
         backToMeterTime();
-
 
     } catch (e) {
         saveMsg.textContent = "💥 保存失敗";
         console.error(e);
     }
 });
-
 
 /* =========================
     現在時刻の表示

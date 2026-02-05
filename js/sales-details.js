@@ -8,6 +8,13 @@ import {
 } from "./detailCalc.js";
 import { fetchSales, fetchDriverLogs } from "./firestore.js";
 
+//時刻フォーマット関数
+function formatTimeHM(date) {
+    const h = String(date.getHours()).padStart(2, '0');
+    const m = String(date.getMinutes()).padStart(2, '0');
+    return `${h}:${m}`;
+}
+
 async function render() {
     const allSales = await fetchSales();
     const driverLogs = await fetchDriverLogs();
@@ -56,6 +63,20 @@ async function render() {
         .sort(([dateA], [dateB]) => dateB.localeCompare(dateA))
         .forEach(([date, data]) => {
 
+            const saleOfDay = sales.find(s => {
+                const d = formatDate(getBusinessDateForCalc(s));
+                return d === date;
+            });
+
+            let workTimeText = '⚠ 出勤時間未記録';
+
+            if (saleOfDay?.workStartAt && saleOfDay?.workEndAt) {
+                const start = saleOfDay.workStartAt.toDate();
+                const end = saleOfDay.workEndAt.toDate();
+                workTimeText = `${formatTimeHM(start)} ～ ${formatTimeHM(end)}`;
+            }
+
+
 
             // ★ この日付に売上メモがあるか判定
             const hasMemo = sales.some(s => {
@@ -65,17 +86,27 @@ async function render() {
 
             const tr = document.createElement("tr");
             tr.innerHTML = `
-            <td>${date}</td>
-            <td>${data.gross.toLocaleString()}円</td>
-            <td>${data.net.toLocaleString()}円</td>
-            <td class="memo-cell">
-                ${hasMemo
+        <td>
+            <div class="date-cell">
+                <span class="date">${date}</span>
+                <span class="work-time ${saleOfDay?.workStartAt ? '' : 'unrecorded'}">
+                    ${workTimeText}
+                </span>
+            </div>
+        </td>
+        <td>${data.gross.toLocaleString()}円</td>
+        <td>${data.net.toLocaleString()}円</td>
+        <td class="memo-cell">
+        ${hasMemo
                     ? `<button class="memo-btn" data-date="${date}">📝</button>`
                     : ``}
-            </td>
-        `;
+        </td>
+`;
+
             tbody.appendChild(tr);
         });
+
+
     /* ===== 日別ログ ===== */
     const logsEl = document.getElementById("dailyLogs");
 
