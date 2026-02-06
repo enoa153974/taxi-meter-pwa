@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>売上集計ページ</title>
+
+    <!-- 共通CSS -->
+    <link rel="stylesheet" href="./css/style.css" />
+    <!-- ぺージ固有のCSS -->
+    <link rel="stylesheet" href="./css/monthly-report.css" />
+
+    <!-- Font Awesome（戻るアイコンなどで使える） -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+</head>
+
+
+<body>
+
+    <!-- header -->
+    <header class="header">
+        <button class="phrases-back" onclick="history.back()">
+            <i class="fa-solid fa-arrow-left"></i>
+            戻る
+        </button>
+        <h1 class="phrases-title">月別集計（2026年1月度）</h1>
+    </header>
+
+    <main class="monthly-report">
+        <nav class="page-tabs">
+            <a href="./sales-details.html" class="page-tab">
+                今月の売上
+            </a>
+
+            <a href="./monthly-report.html" class="page-tab is-active">
+                月別分析
+            </a>
+        </nav>
+        <!-- 月度表示 -->
+        <p id="billingPeriod" class="billing-period"></p>
+
+        <h2>月別サマリー</h2>
+
+        <!-- ★ 月サマリー -->
+        <section class="monthly-summary">
+            <div class="monthly-summary__card">
+                <div class="summary-item">
+                    <span class="label">税込合計</span>
+                    <span class="value" id="totalGross">-- 円</span>
+                </div>
+
+                <div class="summary-item">
+                    <span class="label">税抜合計</span>
+                    <span class="value" id="totalNet">-- 円</span>
+                </div>
+
+                <div class="summary-item">
+                    <span class="label">出勤日数</span>
+                    <span class="value" id="workDays">-- 日</span>
+                </div>
+            </div>
+        </section>
+
+        <h3 class="day__heading">日別実績</h3>
+        <!-- ★ 日別カード一覧（JSで生成） -->
+        <div id="dailyReport" class="daily-report"></div>
+
+
+        <button id="copyForGpt" class="gpt-copy-btn">
+             <i class="fas fa-robot"></i>分析用にコピー
+        </button>
+
+
+        <h3 class="weekday-heading">曜日別平均</h3>
+
+        <section class="weekday-average" id="weekdayAverage">
+            <!-- JSで曜日カードを追加 -->
+        </section>
+
+
+        <!-- 所見セクション -->
+        <h3 class="insight-heading">所見・振り返り</h3>
+
+        <section class="monthly-insight">
+            <div class="insight-block">
+                <h4>全体所見</h4>
+                <p id="monthlySummary"></p>
+            </div>
+
+            <div class="insight-block">
+                <h4>曜日別所見</h4>
+                <ul id="weekdayInsightList"></ul>
+            </div>
+        </section>
+
+
+
+    </main>
+    <script type="module" src="./js/monthry-details.js"></script>
+</body>
+
+</html>

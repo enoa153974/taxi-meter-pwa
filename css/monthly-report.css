@@ -1,0 +1,218 @@
+/* =========================
+   ページ内タブ
+========================= */
+.page-tabs {
+    display: flex;
+    gap: 1rem;
+    margin: 1rem 0 1.25rem;
+    padding-bottom: .25rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.page-tab {
+    position: relative;
+    padding: .5rem .25rem;
+    font-size: .95rem;
+    color: #6b7280;
+    /* グレー */
+    text-decoration: none;
+    font-weight: 500;
+}
+
+/* アクティブ */
+.page-tab.is-active {
+    color: #2563eb;
+    /* 青 */
+    font-weight: 600;
+}
+
+.page-tab.is-active::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -.35rem;
+    width: 100%;
+    height: 2px;
+    background-color: #2563eb;
+    border-radius: 2px;
+}
+
+/* ページ全体のデザイン */
+.monthly-report {
+    background-color: #f6f7f8;
+    min-height: 100vh;
+    padding: 2rem 1rem;
+    font-size: .95rem;
+}
+
+
+.monthly-summary__card {
+    max-width: 720px;
+    margin: 1.5rem auto;
+    background: #fff;
+    border-radius: .5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .08);
+    padding: 1rem;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.summary-item {
+    display: flex;
+    flex-direction: column;
+    gap: .25rem;
+    text-align: center;
+}
+
+.summary-item .label {
+    font-size: .75rem;
+    color: #555;
+}
+
+.summary-item .value {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.day-card {
+    max-width: 720px;
+    margin: 1.5rem auto;
+    background: #fff;
+    border-radius: .5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .08);
+    padding: 1rem;
+}
+
+.day-card__header {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: .75rem;
+}
+
+.day-card__date {
+    display: flex;
+    flex-direction: column;
+    gap: .25rem;
+}
+
+.day-card__sales {
+    display: flex;
+    flex-direction: column;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.day-card__memo {
+    background: #f6f7f8;
+    padding: .75rem;
+    border-radius: .25rem;
+    margin-bottom: .5rem;
+}
+
+.day-card__logs ul {
+    padding-left: 1.2rem;
+    margin: 0;
+}
+
+
+/* 見出しデザイン */
+h2,
+h3,
+h4 {
+    position: relative;
+    padding: 0.6em;
+    background: #e0edff;
+    border-radius: 5px;
+}
+
+h2::after,
+h3::after {
+    position: absolute;
+    content: '';
+    top: 100%;
+    left: 30px;
+    border: 15px solid transparent;
+    border-top: 15px solid #e0edff;
+    width: 0;
+    height: 0;
+
+}
+
+.weekday-average {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+    margin: 1.5rem 0;
+}
+
+.weekday-card {
+    background: #fff;
+    border-radius: .5rem;
+    padding: 1rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .08);
+    text-align: center;
+}
+
+.weekday-card__day {
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.weekday-card__gross {
+    margin-top: .5rem;
+    font-weight: 600;
+}
+
+.weekday-card__time {
+    font-size: .85rem;
+    color: #555;
+}
+
+.monthly-insight {
+    background: #fff;
+    padding: 1.5rem;
+    border-radius: .5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .08);
+    margin: 1.5rem 0;
+}
+
+.insight-block {
+    margin-bottom: 1.5rem;
+}
+
+.insight-label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: .5rem;
+}
+
+.insight-textarea {
+    width: 100%;
+    resize: vertical;
+    padding: .75rem;
+    border-radius: .4rem;
+    border: 1px solid #ccc;
+    font-family: inherit;
+    font-size: .9rem;
+    line-height: 1.5;
+}
+
+.insight-textarea:focus {
+    outline: none;
+    border-color: #6aa9ff;
+}
+
+.insight-block p {
+    line-height: 1.9;
+    margin-bottom: 1em;
+}
+
+.insight-block ul {
+    padding-left: 1.2em;
+}
+
+.insight-block li {
+    margin-bottom: .5em;
+}

@@ -1,4 +1,44 @@
 /* =========================
+   ページ内タブ
+========================= */
+.page-tabs {
+    display: flex;
+    gap: 1rem;
+    margin: 1rem 0 1.25rem;
+    padding-bottom: .25rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.page-tab {
+    position: relative;
+    padding: .5rem .25rem;
+    font-size: .95rem;
+    color: #6b7280;
+    /* グレー */
+    text-decoration: none;
+    font-weight: 500;
+}
+
+/* アクティブ */
+.page-tab.is-active {
+    color: #2563eb;
+    /* 青 */
+    font-weight: 600;
+}
+
+.page-tab.is-active::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -.35rem;
+    width: 100%;
+    height: 2px;
+    background-color: #2563eb;
+    border-radius: 2px;
+}
+
+
+/* =========================
     sales-details 共通
 ========================= */
 .sales-details {
@@ -17,6 +57,7 @@
 .total-net {
     font-weight: 700;
 }
+
 
 /* =========================
     テーブル共通（カード化）
