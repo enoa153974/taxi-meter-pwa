@@ -12,17 +12,21 @@ import { db } from "./firebase.js";
 export async function fetchSales() {
     const snapshot = await getDocs(collection(db, "sales"));
 
-    return snapshot.docs.map(doc => {
-        const data = doc.data();
+    return snapshot.docs.map(docSnap => {
+        const data = docSnap.data();
         return {
-            id: doc.id,          // ← 将来の更新・削除用
+            id: docSnap.id,
             amount: data.amount,
             memo: data.memo,
-            createdAt: data.createdAt ?? null
-
+            createdAt: data.createdAt ?? null,
+            businessDate: data.businessDate ?? null,
+            workStartAt: data.workStartAt ?? null,
+            workEndAt: data.workEndAt ?? null,
+            workMinutes: data.workMinutes ?? null
         };
     });
 }
+
 
 /* ドライバーログ取得 */
 export async function fetchDriverLogs() {

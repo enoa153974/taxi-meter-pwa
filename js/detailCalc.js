@@ -87,24 +87,38 @@ export function calcBusinessDateForSave(date = new Date()) {
 
 // 集計用（旧データ対応）
 export function getBusinessDateForCalc(data) {
-    // ① 新データ：businessDate があれば最優先
+    // ① businessDate がある場合（最優先）
     if (data.businessDate) {
-        const d = data.businessDate instanceof Date
-            ? data.businessDate
-            : data.businessDate.toDate();
+        let d;
+
+        // Date
+        if (data.businessDate instanceof Date) {
+            d = new Date(data.businessDate);
+
+            // Firestore Timestamp
+        } else if (typeof data.businessDate.toDate === "function") {
+            d = data.businessDate.toDate();
+
+            // string（YYYY-MM-DD）
+        } else if (typeof data.businessDate === "string") {
+            d = new Date(`${data.businessDate}T00:00:00`);
+
+        } else {
+            return null;
+        }
 
         d.setHours(0, 0, 0, 0);
         return d;
     }
 
-    // ② 旧データ：createdAt から営業日を計算（AM5ルール適用）
+    // ② 旧データ：createdAt から算出
     if (!data.createdAt) return null;
 
     const d = data.createdAt instanceof Date
         ? new Date(data.createdAt)
-        : new Date(data.createdAt.toDate());
+        : data.createdAt.toDate();
 
-    // ⭐ ここが今まで無かった
+    // AM5時ルール
     if (d.getHours() < 5) {
         d.setDate(d.getDate() - 1);
     }
@@ -112,6 +126,7 @@ export function getBusinessDateForCalc(data) {
     d.setHours(0, 0, 0, 0);
     return d;
 }
+
 //firestoreから期間内だけ合計を出す関数
 // firestoreから期間内だけ合計を出す関数（税抜・税込）
 export async function loadSalesSummary() {
