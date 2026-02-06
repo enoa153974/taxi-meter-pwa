@@ -37,8 +37,20 @@
                 月別分析
             </a>
         </nav>
+
+
         <!-- 月度表示 -->
-        <p id="billingPeriod" class="billing-period"></p>
+        <div class="month-switcher">
+            <button id="prevMonth" type="button">◀</button>
+
+            <div class="month-switcher__label">
+                <span id="analysisMonthLabel">2026年1月</span>
+                <small id="billingPeriod"></small>
+            </div>
+
+            <button id="nextMonth" type="button">▶</button>
+        </div>
+
 
         <h2>月別サマリー</h2>
 
@@ -68,7 +80,7 @@
 
 
         <button id="copyForGpt" class="gpt-copy-btn">
-             <i class="fas fa-robot"></i>分析用にコピー
+            <i class="fas fa-robot"></i>分析用にコピー
         </button>
 
 
