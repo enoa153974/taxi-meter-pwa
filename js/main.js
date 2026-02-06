@@ -1,6 +1,9 @@
 
 import { loadSalesSummary, calcBusinessDateForSave } from "./detailCalc.js";
 import { addSale, addDriverLog } from "./firestore.js";
+import { initAuth } from "./auth.js";
+
+await initAuth();
 
 let currentPanel = "time";//状態
 

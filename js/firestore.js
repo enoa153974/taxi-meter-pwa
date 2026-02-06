@@ -3,8 +3,7 @@
 
 import { collection, getDocs, addDoc } from
     "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { db } from "./firebase.js";
-
+import { db  } from "./firebase.js";
 /**
  * Firestore から売上データを取得する
  * @returns {Promise<Array<{id: string, amount: number, memo: string, createdAt: any}>>}
