@@ -150,6 +150,59 @@ async function render() {
         workDays: Object.keys(grouped).length,
         dailyData
     };
+
+    //コピー用ロジック
+    document.getElementById("copyForGpt")?.addEventListener("click", async () => {
+        if (!gptPayload) {
+            alert("分析データがまだ生成されていません");
+            return;
+        }
+
+        const text = buildGPTText(gptPayload);
+
+        try {
+            await navigator.clipboard.writeText(text);
+            alert("📋 分析データをコピーしました！");
+        } catch (e) {
+            console.error(e);
+            alert("コピーに失敗しました");
+        }
+    });
+
+    //文章整形用ロジック
+    function buildGPTText(payload) {
+        const lines = [];
+
+        lines.push("【対象期間】");
+        lines.push(payload.periodText);
+        lines.push("");
+
+        lines.push("【月サマリー】");
+        lines.push(`・税込合計：${payload.total.gross.toLocaleString()}円`);
+        lines.push(`・税抜合計：${payload.total.net.toLocaleString()}円`);
+        lines.push(`・出勤日数：${payload.workDays}日`);
+        lines.push("");
+
+        lines.push("【日別実績】");
+        payload.dailyData.forEach(d => {
+            lines.push(`■ ${d.date}`);
+            lines.push(`  税込：${d.gross.toLocaleString()}円`);
+            lines.push(`  税抜：${d.net.toLocaleString()}円`);
+            lines.push(`  稼働：${d.workTime}`);
+            if (d.memo) lines.push(`  メモ：${d.memo}`);
+            if (d.logs?.length) {
+                d.logs.forEach(l => lines.push(`   - ${l}`));
+            }
+            lines.push("");
+        });
+
+        lines.push("【分析依頼】");
+        lines.push("上記データを元に、運行の所見と改善点を出してください。");
+
+        return lines.join("\n");
+    }
+
+
     /* =========================
      * 曜日別点検（平均）
      * ========================= */
