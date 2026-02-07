@@ -1,9 +1,25 @@
-
+/* =========================
+    import / state
+========================= */
 import { loadSalesSummary, calcBusinessDateForSave } from "./detailCalc.js";
 import { addSale, addDriverLog } from "./firestore.js";
 
 
 let currentPanel = "time";//状態
+
+/* =========================
+    初期化
+========================= */
+document.addEventListener("DOMContentLoaded", () => {
+    //メーターパネルの切替（初期状態：時計）
+        switchMeterView("meterTime");
+    //実車パネルに集計を表示
+        initSummary();
+    //現在時刻の表示処理
+        updateCurrentTime();
+    //画面の自動更新処理                         
+    setInterval(updateCurrentTime, 1000);
+});
 
 // ===============================
 // AudioContext（最初の操作で一度だけ初期化）
@@ -68,14 +84,31 @@ function setupPressAction({
 }
 
 // ===============================
-// 空車・実車・支払パネルのボタンの取得
+// メーターパネルの表示切替関数
 // ===============================
-//支払いパネルの必要ボタン取得
-const payBtn = document.getElementById("payBtn");
-const saveBtn = document.getElementById("saveSales");
-const amountInput = document.getElementById("salesAmount");
-const memoInput = document.getElementById("salesMemo");
-const saveMsg = document.getElementById("saveMessage");
+
+// 各パネルを表示切替 
+function switchMeterView(showId) {
+    const ids = ["meterTime", "logForm", "summaryPanel", "payForm"];
+
+    ids.forEach(id => {
+        document.getElementById(id)?.classList.toggle("hidden", id !== showId);
+    });
+
+    currentPanel = (showId === "meterTime") ? "time" : showId;
+}
+
+//  初期状態（時計表示）に戻す
+function backToMeterTime() {
+    switchMeterView("meterTime");
+}
+
+//全て閉じる関数 
+function backToHome() {
+    document.getElementById("logForm")?.classList.add("hidden");
+    document.getElementById("payForm")?.classList.add("hidden");
+    document.getElementById("summaryPanel")?.classList.add("hidden");
+}
 
 
 // ===============================
@@ -96,28 +129,9 @@ async function initSummary() {
     }
 }
 
-
-//初期状態（現在の時刻を表示）
-document.addEventListener("DOMContentLoaded", () => {
-    switchMeterView("meterTime"); // ← これを1行足す
-    initSummary();
-});
-
-
-// ===============================
-// メーターパネルの表示切替関数
-// ===============================
-
-/* 各パネルを表示切替 */
-function switchMeterView(showId) {
-    const ids = ["meterTime", "logForm", "summaryPanel", "payForm"];
-
-    ids.forEach(id => {
-        document.getElementById(id)?.classList.toggle("hidden", id !== showId);
-    });
-
-    currentPanel = (showId === "meterTime") ? "time" : showId;
-}
+/* =========================
+    ボタンイベント（パネル系）
+========================= */
 
 // 空車ボタンを押下したときの挙動
 logBtn.addEventListener("click", () => {
@@ -151,6 +165,12 @@ setupPressAction({
 });
 
 
+//支払いパネルの必要ボタン取得
+const payBtn = document.getElementById("payBtn");
+const saveBtn = document.getElementById("saveSales");
+const amountInput = document.getElementById("salesAmount");
+const memoInput = document.getElementById("salesMemo");
+const saveMsg = document.getElementById("saveMessage");
 
 
 // 支払ボタンを押下したときの挙動
@@ -164,19 +184,6 @@ payBtn.addEventListener("click", () => {
 });
 
 
-// 戻す場所が必要なら
-function backToMeterTime() {
-    switchMeterView("meterTime");
-}
-
-
-
-/* 全て閉じる関数 */
-function backToHome() {
-    document.getElementById("logForm")?.classList.add("hidden");
-    document.getElementById("payForm")?.classList.add("hidden");
-    document.getElementById("summaryPanel")?.classList.add("hidden");
-}
 
 /* 実車ボタン押下後に表示される詳細ボタンを押すと、売上集計ページに移管する処理 */
 document.getElementById("btnDetails")?.addEventListener("click", () => {
@@ -222,7 +229,7 @@ if (saveLogBtn) {
 }
 
 // ===============================
-// 支払いフォーム表示/保存処理
+// 支払いフォーム表示/売上保存処理
 // ===============================
 
 // ⭐ 保存ボタン押したら Firestore に売上を追加
