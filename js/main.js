@@ -225,6 +225,7 @@ if (saveLogBtn) {
 
         try {
             await addDriverLog({
+                userId: window.currentUserUid,
                 note,
                 createdAt: new Date(),
                 businessDate: calcBusinessDateForSave()
@@ -275,6 +276,7 @@ saveBtn.addEventListener("click", async () => {
 
     try {
         await addSale({
+            userId: window.currentUserUid,
             amount,
             memo,
             createdAt: now,
