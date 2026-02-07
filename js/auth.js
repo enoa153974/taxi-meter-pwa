@@ -7,24 +7,38 @@ import {
 import { auth } from "./firebase.js";
 
 /**
- * Firebase Auth 初期化（匿名ログイン）
+ * Firebase Auth 初期化
+ * - 未ログインなら匿名ログイン
+ * - ログイン完了後に uid を返す
  */
-export async function initAuth() {
+export function initAuth() {
     return new Promise((resolve, reject) => {
+
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                console.log("✅ Auth OK (uid):", user.uid);
+                // すでにログイン済み
+                console.log("Auth OK (already signed in):", user.uid);
+
+                // グローバルに保持（他JSから参照用）
+                window.currentUser = user;
+                window.currentUserUid = user.uid;
+
                 resolve(user);
                 return;
             }
 
             try {
+                // 未ログイン → 匿名ログイン
                 const result = await signInAnonymously(auth);
-                console.log("✅ 匿名ログイン成功:", result.user.uid);
+                console.log("Auth OK (anonymous):", result.user.uid);
+
+                window.currentUser = result.user;
+                window.currentUserUid = result.user.uid;
+
                 resolve(result.user);
-            } catch (error) {
-                console.error("❌ 匿名ログイン失敗", error);
-                reject(error);
+            } catch (e) {
+                console.error("Auth failed:", e);
+                reject(e);
             }
         });
     });

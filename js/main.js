@@ -3,23 +3,37 @@
 ========================= */
 import { loadSalesSummary, calcBusinessDateForSave } from "./detailCalc.js";
 import { addSale, addDriverLog } from "./firestore.js";
-
+import { initAuth } from "./auth.js";
 
 let currentPanel = "time";//状態
+
 
 /* =========================
     初期化
 ========================= */
-document.addEventListener("DOMContentLoaded", () => {
-    //メーターパネルの切替（初期状態：時計）
+document.addEventListener("DOMContentLoaded", async () => {
+    try {
+        // Firebase Auth 初期化（匿名ログイン）
+        await initAuth();
+
+        // メーターパネルの切替（初期状態：時計）
         switchMeterView("meterTime");
-    //実車パネルに集計を表示
+
+        // 実車パネルに集計を表示
         initSummary();
-    //現在時刻の表示処理
+
+        // 現在時刻の表示処理
         updateCurrentTime();
-    //画面の自動更新処理                         
-    setInterval(updateCurrentTime, 1000);
+
+        // 画面の自動更新処理
+        setInterval(updateCurrentTime, 1000);
+
+    } catch (e) {
+        alert("ログインに失敗しました");
+        console.error(e);
+    }
 });
+
 
 // ===============================
 // AudioContext（最初の操作で一度だけ初期化）
