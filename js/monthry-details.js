@@ -8,6 +8,8 @@ import {
 } from "./detailCalc.js";
 import { fetchSales, fetchDriverLogs } from "./firestore.js";
 
+import { buildMonthSummary } from "./monthSummary.js";
+
 /* =========================
  * 状態
  * ========================= */
@@ -76,8 +78,8 @@ async function render() {
     });
 
     // 集計
-    const grouped = groupByDate(sales);
-    const total = calcTotal(grouped);
+    const summary = buildMonthSummary(allSales, baseDate);
+    const { grouped, total, workDays } = summary;
     const logsByDate = groupDriverLogsByDate(logs);
 
     // 月サマリー

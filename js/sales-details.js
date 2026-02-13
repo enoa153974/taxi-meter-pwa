@@ -8,6 +8,7 @@ import {
 } from "./detailCalc.js";
 import { fetchSales, fetchDriverLogs } from "./firestore.js";
 
+
 //時刻フォーマット関数
 function formatTimeHM(date) {
     const h = String(date.getHours()).padStart(2, '0');
@@ -26,7 +27,7 @@ async function render() {
     const periodEl = document.getElementById("billingPeriod");
     if (periodEl) {
         periodEl.textContent =
-            `今月の対象期間：${formatDate(start)} ～ ${formatDate(end)}`;
+            `${formatDate(start)} ～ ${formatDate(end)}`;
     }
 
     // ★ 月度内の売上だけに絞る
@@ -56,6 +57,11 @@ async function render() {
 
     document.getElementById("totalNet").textContent =
         `税抜合計：${total.net.toLocaleString()}円`;
+
+    // 現在の乗務回数 
+    const days = Object.keys(grouped).length;
+    document.getElementById("workDays").textContent = `${days}回`;
+    document.getElementById("leftworkDays").textContent = `${20-days}回`;
 
     // 日別売上表
     const tbody = document.getElementById("dailySales");

@@ -26,6 +26,7 @@
     </header>
 
     <main class="sales-details">
+        <!-- ページ切替タブ -->
         <nav class="page-tabs">
             <a href="./sales-details.html" class="page-tab is-active">
                 今月の売上
@@ -36,14 +37,28 @@
             </a>
         </nav>
 
-        <p id="billingPeriod" class="billing-period"></p>
-        <h2>売上詳細</h2>
+        <!-- 売上詳細見出し -->
+        <h3>売上詳細</h3>
 
         <section class="total-table">
+            <p class="billing-period__label">今月の対象期間：</p>
+            <p id="billingPeriod" class="billing-period"></p>
+            <br>
             <p id="totalGross" class="total-gross"></p>
             <p id="totalNet" class="total-net"></p>
         </section>
 
+        <!-- 乗務回数 -->
+        <h3 class="day__heading">現在の乗務回数</h3>
+
+        <div>
+            <span class="label">現在の乗務回数</span>
+            <span class="value" id="workDays">-- 回</span>
+            <span class="label">：残り乗務回数</span>
+            <span class="value" id="leftworkDays">-- 回</span>
+        </div>
+
+        <!-- 日別売上 -->
         <section class="day">
             <h3 class="day__heading">日別売上</h3>
             <table class="day__table">

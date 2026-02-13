@@ -53,9 +53,17 @@
 }
 
 /* 売上詳細 */
+.billing-period__label {
+    font-weight: bold;
+}
+
 .total-gross,
 .total-net {
     font-weight: 700;
+}
+
+.label {
+    font-weight: bold;
 }
 
 
