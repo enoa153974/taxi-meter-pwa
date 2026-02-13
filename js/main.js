@@ -354,11 +354,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    // 🎯 一斉点呼の日判定
+    // 月別例外設定（必要な月だけ書く）
+    const rollCallOverrides = {
+        "2026-03": [10, 11, 20, 21]
+    };
+
     function checkRollCall() {
-        const rollCallDays = [10, 11, 21, 22]; // 一斉点呼の日
+        const defaultDays = [10, 11, 21, 22];
+
         const today = new Date();
-        const tomorrow = today.getDate() + 1;
+        const tomorrowDate = new Date(today);
+        tomorrowDate.setDate(today.getDate() + 1);
+
+        const yearMonth =
+            `${tomorrowDate.getFullYear()}-${String(tomorrowDate.getMonth() + 1).padStart(2, "0")}`;
+
+        // overrideがあればそれを使用、なければ通常日
+        const rollCallDays = rollCallOverrides[yearMonth] || defaultDays;
+
+        const tomorrow = tomorrowDate.getDate();
 
         if (rollCallDays.includes(tomorrow)) {
             line2.textContent = '明日は一斉点呼です';
@@ -367,6 +381,7 @@ document.addEventListener('DOMContentLoaded', () => {
             line2.style.display = 'none';
         }
     }
+
 
 
     // 🌟 初回実行

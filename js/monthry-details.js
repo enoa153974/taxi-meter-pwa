@@ -1,7 +1,5 @@
 import {
-    groupByDate,
     groupDriverLogsByDate,
-    calcTotal,
     formatDate,
     getBillingPeriod,
     getBusinessDateForCalc
