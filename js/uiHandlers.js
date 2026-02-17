@@ -161,8 +161,10 @@ export function initUIHandlers({
 
         if (!note) {
             alert("メモを入力してね！");
+            buttons.logInput?.focus();
             return;
         }
+
 
         try {
             await addDriverLog({
@@ -206,7 +208,8 @@ export function initUIHandlers({
         }
 
         if (!amount) {
-            if (buttons?.saveMsg) buttons.saveMsg.textContent = "※金額を入力してください";
+            alert("金額を入力してください");
+            buttons.amountInput?.focus();
             return;
         }
 
@@ -239,7 +242,7 @@ export function initUIHandlers({
             hideAllPanels(panel);
             backToMeterTime();
         } catch (e) {
-            if (buttons?.saveMsg) buttons.saveMsg.textContent = "💥 保存失敗";
+            alert("💥 保存失敗");
             console.error(e);
         }
     });
@@ -261,6 +264,6 @@ export function initUIHandlers({
         }, { once: true });
     }
 
-    
+
 }
 

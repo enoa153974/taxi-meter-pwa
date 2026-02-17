@@ -14,34 +14,44 @@
 
 
 
-// --------------------------------------------------
-// ◆ 単一要素取得
-// --------------------------------------------------
+// ==================================================
+// ◆ DOM取得ユーティリティ（安全強化版）
+// ==================================================
+
 /**
- * selectorに一致する最初の要素を取得
- * @param {string} selector CSSセレクタ
- * @param {ParentNode} [parent=document] 検索対象の親要素
- * @returns {Element|null} 見つからなければnull
+ * 単一要素取得
+ * 存在しなければ警告ログを出す
+ * @param {string} selector
+ * @param {ParentNode} [parent=document]
+ * @returns {Element|null}
  */
 export function qs(selector, parent = document) {
-    return parent.querySelector(selector);
+    const el = parent.querySelector(selector);
+
+    if (!el) {
+        console.warn(`⚠️ 要素が見つかりません → ${selector}`);
+    }
+
+    return el;
 }
 
 
-
-// --------------------------------------------------
-// ◆ 複数要素取得
-// --------------------------------------------------
 /**
- * selectorに一致する全要素を配列で取得
- * @param {string} selector CSSセレクタ
+ * 複数要素取得
+ * 0件でもエラーにしない
+ * @param {string} selector
  * @param {ParentNode} [parent=document]
- * @returns {Element[]} 要素配列
+ * @returns {Element[]}
  */
 export function qsa(selector, parent = document) {
-    return [...parent.querySelectorAll(selector)];
-}
+    const els = [...parent.querySelectorAll(selector)];
 
+    if (els.length === 0) {
+        console.warn(`⚠️ 要素が0件です → ${selector}`);
+    }
+
+    return els;
+}
 
 
 // --------------------------------------------------
@@ -53,8 +63,9 @@ export function qsa(selector, parent = document) {
  * @param {string} className クラス名
  * @returns {void}
  */
-export function toggleClass(element, className) {
-    element.classList.toggle(className);
+export function toggleClass(element, className, force) {
+    if (!element) return;
+    element.classList.toggle(className, force);
 }
 
 
@@ -69,6 +80,7 @@ export function toggleClass(element, className) {
  * @returns {void}
  */
 export function addClass(element, className) {
+    if (!element) return;
     element.classList.add(className);
 }
 
@@ -84,6 +96,7 @@ export function addClass(element, className) {
  * @returns {void}
  */
 export function removeClass(element, className) {
+    if (!element) return;
     element.classList.remove(className);
 }
 

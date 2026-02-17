@@ -33,6 +33,10 @@ export function getWorkDate(date) {
 }
 
 
+// ------------------------------
+// ◆ 短タップ、長押しタップによって処理を切り替える関数
+// ------------------------------
+
 export function setupPressAction({ element, shortPress, longPress, longPressTime = 800 }) {
     element.addEventListener('contextmenu', e => e.preventDefault());
 

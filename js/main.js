@@ -2,11 +2,11 @@
     import / state
 ========================= */
 import { initAuth } from "./auth.js";
-import { addMinutes, formatTime, getWorkDate ,setupPressAction } from "./util.js";
+import { addMinutes, formatTime, getWorkDate, setupPressAction } from "./util.js";
 import { startClock, stopClock, updateCurrentTime } from "./clock.js";
 import { initWeather } from "./weather.js";
 import { initUIHandlers } from "./uiHandlers.js";
-import { qs } from "./dom.js";
+import { qs, toggleClass, addClass,removeClass } from "./dom.js";
 
 
 
@@ -25,8 +25,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         //UI周りの初期化に必要なDOM取得
         const panel = {
-            meter: qs("#meterTime"), 
-            log:qs("#logForm"),
+            meter: qs("#meterTime"),
+            log: qs("#logForm"),
             pay: qs("#payForm"),
             summaryPanel: qs("#summaryPanel"),
         };
@@ -47,7 +47,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             saveSale: qs("#saveSales"),
             amountInput: qs("#salesAmount"),
             memoInput: qs("#salesMemo"),
-            saveMsg: qs("#saveMessage"),
         };
 
         //UI初期化
@@ -206,12 +205,11 @@ function calculateTimes(startValue, regularEl, returnEl, endEl, nextStartEl) {
 
     /* ===== 深夜3時超え判定 ===== */
     const LATE_HOUR = 3;
-
-    if (returnDate.getHours() >= LATE_HOUR) {
-        returnEl.classList.add('is-late-end');
-    } else {
-        returnEl.classList.remove('is-late-end');
-    }
+    toggleClass(
+        returnEl,
+        'is-late-end',
+        returnDate.getHours() >= LATE_HOUR
+    );
 }
 
 
@@ -302,13 +300,13 @@ function openFakeMeter() {
     fakeSeconds = 0;
     fakeAmount = 500;
 
-    breakdownEl.classList.add('hidden'); // メーター開始時にリセット
-    qs('#fakeThanks')?.classList.add('hidden');
+    addClass(breakdownEl,'hidden'); // メーター開始時にリセット
+    addClass(qs('#fakeThanks'), 'hidden');
 
     amountEl.textContent = `¥${fakeAmount.toLocaleString()}`;
     elapsedEl.textContent = '00:00';
 
-    meter.classList.remove('hidden');
+    removeClass(meter,'hidden');
 
     fakeTimer = setInterval(() => {
         fakeSeconds++;
@@ -327,7 +325,7 @@ function openFakeMeter() {
 
 function closeFakeMeter() {
     const meter = qs('#fakeMeter');
-    meter.classList.add('hidden');
+    addClass(meter,'hidden');
     if (fakeTimer) {
         clearInterval(fakeTimer);
         fakeTimer = null;
@@ -366,7 +364,7 @@ function showFakeTotal() {
 
     // 内訳表示
     breakdownEl.textContent = `迎車料金 +¥${PICKUP_FEE}`;
-    breakdownEl.classList.remove('hidden');
+    removeClass(breakdownEl,'hidden');
 
     // 合計金額表示
     amountEl.textContent = `¥${total.toLocaleString()}`;
@@ -378,7 +376,7 @@ function showThanksMessage() {
     if (!el) return;
 
     el.textContent = `ご利用ありがとうございました`;
-    el.classList.remove('hidden');
+    removeClass(el,'hidden');
 }
 
 
