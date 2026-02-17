@@ -313,7 +313,7 @@ saveBtn.addEventListener("click", async () => {
     現在時刻の表示
 ========================= */
 const timeEl = document.getElementById('currentTime');
-
+//時計の自動更新処理
 function updateCurrentTime() {
     const now = new Date();
     const h = String(now.getHours()).padStart(2, '0');
@@ -321,8 +321,20 @@ function updateCurrentTime() {
     timeEl.textContent = `${h}:${m}`;
 }
 
-updateCurrentTime();
-setInterval(updateCurrentTime, 1000);
+let clockTimer = null;
+
+//時計の自動更新を開始
+function startClock() {
+    if (!clockTimer) {
+        clockTimer = setInterval(updateCurrentTime, 1000);
+    }
+}
+
+//時計の自動更新を停止
+function stopClock() {
+    clearInterval(clockTimer);
+    clockTimer = null;
+}
 
 
 /* =========================
@@ -549,6 +561,12 @@ setupPressAction({
     longPressTime: 600
 });
 
+/* 定型文ボタン */
+document.getElementById('btnPhrases')?.addEventListener('click', () => {
+    navigator.vibrate?.(50);
+    location.href = './phrases.html';
+});
+
 
 /* =========================
     天気パネルの動作
@@ -562,6 +580,7 @@ const refreshBtn = document.getElementById('weather-refresh');
 let weatherInterval = null;
 const AUTO_UPDATE_INTERVAL = 30 * 60 * 1000; // 30分
 
+//天気パネル表示
 function fetchWeather(retry = false) {
     if (!navigator.geolocation) {
         statusEl.textContent = '位置情報が使えません';
@@ -598,7 +617,7 @@ function fetchWeather(retry = false) {
         }
     );
 }
-
+//天気パネルのアイコンを切り替える
 function getWeatherIcon(main) {
     switch (main) {
         case 'Clear': return '☀️';
@@ -611,14 +630,23 @@ function getWeatherIcon(main) {
     }
 }
 
+//天気パネルの更新ボタン
 refreshBtn?.addEventListener('click', fetchWeather);
 
+
+// 天気初回表示実行
+fetchWeather();
+startAutoUpdate();
+
+
+// 天気自動更新関数
 function startAutoUpdate() {
     if (weatherInterval === null) {
         weatherInterval = setInterval(fetchWeather, AUTO_UPDATE_INTERVAL);
     }
 }
 
+// 天気自動更新停止関数
 function stopAutoUpdate() {
     if (weatherInterval !== null) {
         clearInterval(weatherInterval);
@@ -626,7 +654,28 @@ function stopAutoUpdate() {
     }
 }
 
-// iOS PWA 復帰対策（最重要）
+// ------------------------------
+// ◆ 画面の自動更新を制御
+// ------------------------------
+//画面に非表示のとき（全ブラウザ対応：基本制御）
+document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+        stopAutoUpdate();
+        stopClock();
+    } else {
+        fetchWeather(); // 先に即更新
+        startAutoUpdate();
+        startClock();
+    }
+});
+
+//ぺージを離れるとき（safari対策）
+window.addEventListener("pagehide", () => {
+    stopAutoUpdate();
+    stopClock();
+});
+
+//ページが表示されたとき（iOS PWA 復帰対策）
 window.addEventListener('pageshow', (event) => {
     if (event.persisted) {
         fetchWeather();
@@ -634,21 +683,19 @@ window.addEventListener('pageshow', (event) => {
     }
 });
 
-// 初回
-fetchWeather();
-startAutoUpdate();
-
 
 /* =========================
     出勤・帰社・退勤・次回出勤
 ========================= */
 document.addEventListener('DOMContentLoaded', () => {
     const startInput = document.getElementById('startTime');
+    const regularEl = document.getElementById('regularTime');
     const returnEl = document.getElementById('returnTime');
     const endEl = document.getElementById('endTime');
     const nextStartEl = document.getElementById('nextStartTime');
 
-    if (!startInput || !returnEl || !endEl || !nextStartEl) return;
+    //もし以下の要素がなければ処理を止める（ガード節）
+    if (!startInput || !regularEl || !returnEl || !endEl || !nextStartEl) return;
 
     const STORAGE_TIME = 'taxi_start_time';
     const STORAGE_DATE = 'taxi_work_date';
@@ -662,7 +709,7 @@ document.addEventListener('DOMContentLoaded', () => {
     /* ===== 起動時：4時基準でリセット or 復元 ===== */
     if (savedDate === todayWorkDate && savedTime) {
         startInput.value = savedTime;
-        calculateTimes(savedTime, returnEl, endEl, nextStartEl);
+        calculateTimes(savedTime, regularEl, returnEl, endEl, nextStartEl);
     } else {
         localStorage.removeItem(STORAGE_TIME);
         localStorage.removeItem(STORAGE_DATE);
@@ -676,7 +723,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem(STORAGE_TIME, value);
         localStorage.setItem(STORAGE_DATE, todayWorkDate);
 
-        calculateTimes(value, returnEl, endEl, nextStartEl);
+        calculateTimes(value, regularEl, returnEl, endEl, nextStartEl);
     });
 });
 
@@ -702,7 +749,7 @@ function getWorkDate(date) {
 /* =========================
     時間計算ロジック（シンプル版）
 ========================= */
-function calculateTimes(startValue, returnEl, endEl, nextStartEl) {
+function calculateTimes(startValue, regularEl, returnEl, endEl, nextStartEl) {
     if (!startValue) return;
 
     const [h, m] = startValue.split(':').map(Number);
@@ -710,36 +757,36 @@ function calculateTimes(startValue, returnEl, endEl, nextStartEl) {
     const startDate = new Date();
     startDate.setHours(h, m, 0, 0);
 
+    //各時間の計算方法定義
     const RETURN_MINUTES = 13 * 60;
+    const REGULAR_MINUTES = 10 * 60;
     const END_MINUTES = 1 * 60;
     const REST_MINUTES = 9 * 60;
 
+    //時間計算
     const returnDate = addMinutes(startDate, RETURN_MINUTES);
+    const regularDate = addMinutes(startDate, REGULAR_MINUTES);
     const endDate = addMinutes(returnDate, END_MINUTES);
     const nextStartDate = addMinutes(endDate, REST_MINUTES);
 
     returnEl.textContent = formatTime(returnDate);
+    regularEl.textContent = formatTime(regularDate);
     endEl.textContent = formatTime(endDate);
     nextStartEl.textContent = formatTime(nextStartDate);
 
     /* ===== 深夜3時超え判定 ===== */
     const LATE_HOUR = 3;
 
-    if (endDate.getHours() >= LATE_HOUR) {
-        endEl.classList.add('is-late-end');
+    if (returnDate.getHours() >= LATE_HOUR) {
+        returnEl.classList.add('is-late-end');
     } else {
-        endEl.classList.remove('is-late-end');
+        returnEl.classList.remove('is-late-end');
     }
 }
 
-/* 定型文ボタン */
-document.getElementById('btnPhrases')?.addEventListener('click', () => {
-    navigator.vibrate?.(50);
-    location.href = './phrases.html';
-});
 
 /* =========================
-    共通ユーティリティ
+    出勤時間計算用：共通ユーティリティ
 ========================= */
 function addMinutes(date, minutes) {
     const d = new Date(date);
@@ -747,6 +794,8 @@ function addMinutes(date, minutes) {
     return d;
 }
 
+
+//時間を「〇〇：〇〇」の表記にする関数
 function formatTime(date) {
     const h = String(date.getHours()).padStart(2, '0');
     const m = String(date.getMinutes()).padStart(2, '0');
