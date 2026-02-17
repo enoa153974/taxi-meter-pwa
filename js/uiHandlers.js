@@ -70,6 +70,7 @@ export function initUIHandlers({
         Object.entries(panel).forEach(([key, el]) => {
             el?.classList.toggle("hidden", key !== name);
         });
+
         currentPanel = name;
     }
 
@@ -259,4 +260,7 @@ export function initUIHandlers({
             });
         }, { once: true });
     }
+
+    
 }
+
