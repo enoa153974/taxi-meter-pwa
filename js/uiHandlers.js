@@ -1,5 +1,8 @@
 import { loadSalesSummary, calcBusinessDateForSave } from "./detailCalc.js";
 import { addSale, addDriverLog } from "./firestore.js";
+import { setupPressAction } from "./util.js";
+import { playMeterSound } from "./sound.js";
+import { initFakeMeter } from "./fakeMeter.js";
 
 let currentPanel = "meter"; // 初期状態は meter に寄せる
 
@@ -7,61 +10,7 @@ export function initUIHandlers({
     panel,
     summaryDisplay,
     buttons,
-    // これらはこのファイル外にある前提なので依存として受け取る（なければ渡さなくてOK、ただし呼ぶなら必要）
-    playMeterSound,
-    openFakeMeter,
-    meterSound,
 }) {
-
-    /* =========================
-        UIユーティリティ
-    ========================= */
-    function setupPressAction({
-        element,
-        shortPress,
-        longPress,
-        longPressTime = 800
-    }) {
-        if (!element) return;
-
-        element.addEventListener("contextmenu", e => e.preventDefault());
-
-        let pressTimer = null;
-        let isLongPress = false;
-
-        const onPointerDown = (e) => {
-            e.preventDefault();
-            isLongPress = false;
-
-            pressTimer = setTimeout(() => {
-                isLongPress = true;
-                navigator.vibrate?.(80);
-                longPress?.();
-            }, longPressTime);
-        };
-
-        const onPointerUp = (e) => {
-            e.preventDefault();
-
-            clearTimeout(pressTimer);
-            pressTimer = null;
-
-            if (!isLongPress) {
-                shortPress?.();
-            }
-        };
-
-        const onPointerCancel = () => {
-            clearTimeout(pressTimer);
-            pressTimer = null;
-            isLongPress = false;
-        };
-
-        element.addEventListener("pointerdown", onPointerDown);
-        element.addEventListener("pointerup", onPointerUp);
-        element.addEventListener("pointercancel", onPointerCancel);
-        element.addEventListener("pointerleave", onPointerCancel);
-    }
 
     /* =========================
         パネル表示切替
@@ -128,9 +77,8 @@ export function initUIHandlers({
         },
 
         longPress: () => {
-            // 依存があるときだけ呼ぶ（なければ何もしない）
-            playMeterSound?.();
-            openFakeMeter?.();
+            playMeterSound();
+            initFakeMeter();
         },
 
         longPressTime: 700
@@ -253,16 +201,56 @@ export function initUIHandlers({
     switchMeterView("meter");
 
     /* =========================
-        iOSの音声解除（必要なら）
+        コントロールパネルの動作
     ========================= */
-    if (meterSound) {
-        document.addEventListener("touchstart", () => {
-            meterSound.play().then(() => {
-                meterSound.pause();
-                meterSound.currentTime = 0;
-            });
-        }, { once: true });
-    }
+    /* 帰宅ボタン */
+    buttons.goHome?.addEventListener('click', () => {
+        navigator.vibrate?.(50);
+
+        const msg = encodeURIComponent('今から帰ります🚕');
+        location.href = `https://line.me/R/msg/text/?${msg}`;
+    });
+
+    /* GPTボタン */
+    buttons.GPT?.addEventListener('click', () => {
+        navigator.vibrate?.(50);
+        location.href = 'https://chatgpt.com/';
+    });
+
+
+    /* マップボタン */
+    buttons.map?.addEventListener('click', () => {
+        navigator.vibrate?.(50);
+        location.href = 'https://www.google.com/maps';
+    });
+
+    /* 翻訳ボタン */
+    const translateBtn = buttons.translate;
+
+
+    setupPressAction({
+        element: translateBtn,
+
+        // 短タップ → 英語
+        shortPress: () => {
+            navigator.vibrate?.(40);
+            location.href = 'https://translate.google.com/?sl=ja&tl=en';
+        },
+
+        // 長押し → 中国語
+        longPress: () => {
+            location.href = 'https://translate.google.com/?sl=ja&tl=zh-CN';
+        },
+
+        longPressTime: 600
+    });
+
+    /* 定型文ボタン */
+    buttons.phrases?.addEventListener('click', () => {
+        navigator.vibrate?.(50);
+        location.href = './phrases.html';
+    });
+
 
 
 }

@@ -2,11 +2,13 @@
     import / state
 ========================= */
 import { initAuth } from "./auth.js";
-import { addMinutes, formatTime, getWorkDate, setupPressAction } from "./util.js";
+import { addMinutes, formatTime, getWorkDate } from "./util.js";
 import { startClock, stopClock, updateCurrentTime } from "./clock.js";
 import { initWeather } from "./weather.js";
 import { initUIHandlers } from "./uiHandlers.js";
-import { qs, toggleClass, addClass,removeClass } from "./dom.js";
+import { initSound } from "./sound.js";
+
+import { qs, toggleClass } from "./dom.js";
 
 
 
@@ -22,6 +24,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         // Firebase Auth 初期化（匿名ログイン）
         await initAuth();
 
+        initSound();
 
         //UI周りの初期化に必要なDOM取得
         const panel = {
@@ -36,6 +39,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         };
 
         const buttons = {
+            //メインパネルのボタン
             log: qs("#logBtn"),
             summary: qs("#summaryBtn"),
             pay: qs("#payBtn"),
@@ -47,14 +51,23 @@ document.addEventListener("DOMContentLoaded", async () => {
             saveSale: qs("#saveSales"),
             amountInput: qs("#salesAmount"),
             memoInput: qs("#salesMemo"),
+
+            //コントロールパネルのボタン
+            goHome: qs('#btnGoHome'),
+            GPT: qs('#btnChatGPT'),
+            map: qs('#btnMap'),
+            translate: qs('#btnTranslate'),
+            phrases: qs('#btnPhrases')
         };
+
 
         //UI初期化
         initUIHandlers({
             panel,
             summaryDisplay,
-            buttons
+            buttons,
         });
+
 
 
         // 現在時刻の表示処理
@@ -83,21 +96,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
 
-
-// ===============================
-// AudioContext（最初の操作で一度だけ初期化）
-// ===============================
-// ===== メーター音 =====
-const meterSound = new Audio('../sounds/meter_sound.wav');
-meterSound.preload = 'auto';
-/* メーター音再生用の関数 */
-function playMeterSound() {
-    meterSound.currentTime = 0; // 連打対策
-    meterSound.play().catch(() => {
-        // autoplay制限対策（基本は出ない）
-        console.warn('音声再生がブロックされました');
-    });
-}
 
 // ------------------------------
 // ◆ 画面の自動更新を制御
@@ -266,168 +264,5 @@ document.addEventListener('DOMContentLoaded', () => {
     // 🔁30分ごと更新（1800000ミリ秒）
     const UPDATE_INTERVAL = 30 * 60 * 1000;
     setInterval(setRandomMessage, UPDATE_INTERVAL);
-});
-
-
-/* ネタ用実車メーター （実車ボタン長押しで表示）*/
-function updateMeterDate() {
-    const el = qs('#meterDate');
-    if (!el) return;
-
-    const d = new Date();
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-
-    const weeks = ['日', '月', '火', '水', '木', '金', '土'];
-    const w = weeks[d.getDay()];
-
-    el.textContent = `${y}.${m}.${day}（${w}）`;
-}
-
-updateMeterDate();
-
-let fakeTimer = null;
-let fakeSeconds = 0;
-let fakeAmount = 500;
-
-function openFakeMeter() {
-    const meter = qs('#fakeMeter');
-    const amountEl = qs('#fakeAmount');
-    const elapsedEl = qs('#fakeElapsed');
-    const breakdownEl = qs('#fakeBreakdown');
-
-    fakeSeconds = 0;
-    fakeAmount = 500;
-
-    addClass(breakdownEl,'hidden'); // メーター開始時にリセット
-    addClass(qs('#fakeThanks'), 'hidden');
-
-    amountEl.textContent = `¥${fakeAmount.toLocaleString()}`;
-    elapsedEl.textContent = '00:00';
-
-    removeClass(meter,'hidden');
-
-    fakeTimer = setInterval(() => {
-        fakeSeconds++;
-
-        // 30秒ごとに+100円（テンポ良し）
-        if (fakeSeconds % 30 === 0) {
-            fakeAmount += 100;
-            amountEl.textContent = `¥${fakeAmount.toLocaleString()}`;
-        }
-
-        const mm = String(Math.floor(fakeSeconds / 60)).padStart(2, '0');
-        const ss = String(fakeSeconds % 60).padStart(2, '0');
-        elapsedEl.textContent = `${mm}:${ss}`;
-    }, 1000);
-}
-
-function closeFakeMeter() {
-    const meter = qs('#fakeMeter');
-    addClass(meter,'hidden');
-    if (fakeTimer) {
-        clearInterval(fakeTimer);
-        fakeTimer = null;
-    }
-}
-
-//戻るボタンの挙動
-qs('#fakeCloseBtn')?.addEventListener('click', closeFakeMeter);
-
-document.addEventListener('touchstart', () => {
-    meterSound.play().then(() => {
-        meterSound.pause();
-        meterSound.currentTime = 0;
-    });
-}, { once: true });
-
-//支払ボタンの挙動
-qs('#fakeStopBtn')?.addEventListener('click', () => {
-    if (fakeTimer) {
-        clearInterval(fakeTimer);
-        fakeTimer = null;
-    }
-
-    playMeterSound();
-    showFakeTotal();
-    showThanksMessage();
-});
-
-
-function showFakeTotal() {
-    const breakdownEl = qs('#fakeBreakdown');
-    const amountEl = qs('#fakeAmount');
-
-    const PICKUP_FEE = 300;
-    const total = fakeAmount + PICKUP_FEE;
-
-    // 内訳表示
-    breakdownEl.textContent = `迎車料金 +¥${PICKUP_FEE}`;
-    removeClass(breakdownEl,'hidden');
-
-    // 合計金額表示
-    amountEl.textContent = `¥${total.toLocaleString()}`;
-}
-
-/* ボタンが押されたらご利用ありがとうございましたと表示する関数 */
-function showThanksMessage() {
-    const el = qs('#fakeThanks');
-    if (!el) return;
-
-    el.textContent = `ご利用ありがとうございました`;
-    removeClass(el,'hidden');
-}
-
-
-/* =========================
-    コントロールパネルの動作
-========================= */
-/* 帰宅ボタン */
-qs('#btnGoHome')?.addEventListener('click', () => {
-    navigator.vibrate?.(50);
-
-    const msg = encodeURIComponent('今から帰ります🚕');
-    location.href = `https://line.me/R/msg/text/?${msg}`;
-});
-
-/* GPTボタン */
-qs('#btnChatGPT')?.addEventListener('click', () => {
-    navigator.vibrate?.(50);
-    location.href = 'https://chatgpt.com/';
-});
-
-
-/* マップボタン */
-qs('#btnMap')?.addEventListener('click', () => {
-    navigator.vibrate?.(50);
-    location.href = 'https://www.google.com/maps';
-});
-
-/* 翻訳ボタン */
-const translateBtn = qs('#btnTranslate');
-
-
-setupPressAction({
-    element: translateBtn,
-
-    // 短タップ → 英語
-    shortPress: () => {
-        navigator.vibrate?.(40);
-        location.href = 'https://translate.google.com/?sl=ja&tl=en';
-    },
-
-    // 長押し → 中国語
-    longPress: () => {
-        location.href = 'https://translate.google.com/?sl=ja&tl=zh-CN';
-    },
-
-    longPressTime: 600
-});
-
-/* 定型文ボタン */
-qs('#btnPhrases')?.addEventListener('click', () => {
-    navigator.vibrate?.(50);
-    location.href = './phrases.html';
 });
 
