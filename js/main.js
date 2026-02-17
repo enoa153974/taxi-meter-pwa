@@ -1,29 +1,75 @@
 /* =========================
     import / state
 ========================= */
-import { loadSalesSummary, calcBusinessDateForSave } from "./detailCalc.js";
-import { addSale, addDriverLog } from "./firestore.js";
 import { initAuth } from "./auth.js";
+import { addMinutes, formatTime, getWorkDate } from "./util.js";
+import { startClock, stopClock, updateCurrentTime } from "./clock.js";
+import { initWeather } from "./weather.js";
+import { initUIHandlers } from "./uiHandlers.js";
 
-let currentPanel = "time";//状態
+
 
 
 /* =========================
     初期化
 ========================= */
+
+
 document.addEventListener("DOMContentLoaded", async () => {
     try {
         // Firebase Auth 初期化（匿名ログイン）
         await initAuth();
 
-        // メーターパネルの切替（初期状態：時計）
-        switchMeterView("meterTime");
 
-        // 実車パネルに集計を表示
-        initSummary();
+        //UI周りの初期化に必要なDOM取得
+        const panel = {
+            meter: document.getElementById("meterTime"),
+            log: document.getElementById("logForm"),
+            pay: document.getElementById("payForm"),
+            summaryPanel: document.getElementById("summaryPanel"),
+        };
+
+        const summaryDisplay = {
+            amount: document.getElementById("summaryAmount"),
+        };
+
+        const buttons = {
+            log: document.getElementById("logBtn"),
+            summary: document.getElementById("summaryBtn"),
+            pay: document.getElementById("payBtn"),
+            details: document.getElementById("btnDetails"),
+
+            saveLog: document.getElementById("saveLogBtn"),
+            logInput: document.getElementById("logInput"),
+
+            saveSale: document.getElementById("saveSales"),
+            amountInput: document.getElementById("salesAmount"),
+            memoInput: document.getElementById("salesMemo"),
+            saveMsg: document.getElementById("saveMessage"),
+        };
+
+        //UI初期化
+        initUIHandlers({
+            panel,
+            summaryDisplay,
+            buttons
+        });
+
 
         // 現在時刻の表示処理
-        updateCurrentTime();
+        const timeEl = document.getElementById('currentTime');
+        updateCurrentTime(timeEl);
+        startClock(timeEl);
+
+        //天気パネルの表示処理
+        const API_KEY = '431956e1ae5d6c3bde0cbdbaf7b3102e';
+        initWeather({
+            statusEl: document.getElementById("weather-status"),
+            tempEl: document.getElementById("weather-temp"),
+            refreshBtn: document.getElementById("weather-refresh"),
+            apiKey: API_KEY
+        });
+
 
         // 画面の自動更新処理
         setInterval(updateCurrentTime, 1000);
@@ -33,6 +79,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.error(e);
     }
 });
+
+
 
 
 // ===============================
@@ -48,610 +96,6 @@ function playMeterSound() {
         // autoplay制限対策（基本は出ない）
         console.warn('音声再生がブロックされました');
     });
-}
-/* =========================
-    UIユーティリティ
-========================= */
-/* 長押し検知関数（通常タップと長押しで結果を使い分ける用） */
-function setupPressAction({
-    element,
-    shortPress,
-    longPress,
-    longPressTime = 800
-}) {
-    element.addEventListener('contextmenu', e => e.preventDefault());
-    let pressTimer = null;
-    let isLongPress = false;
-
-    const onPointerDown = (e) => {
-        e.preventDefault();
-        isLongPress = false;
-
-        pressTimer = setTimeout(() => {
-            isLongPress = true;
-            navigator.vibrate?.(80);
-            longPress?.();
-        }, longPressTime);
-    };
-
-    const onPointerUp = (e) => {
-        e.preventDefault();
-
-        clearTimeout(pressTimer);
-        pressTimer = null;
-
-        if (!isLongPress) {
-            shortPress?.();
-        }
-    };
-
-    const onPointerCancel = () => {
-        clearTimeout(pressTimer);
-        pressTimer = null;
-        isLongPress = false;
-    };
-
-    element.addEventListener('pointerdown', onPointerDown);
-    element.addEventListener('pointerup', onPointerUp);
-    element.addEventListener('pointercancel', onPointerCancel);
-    element.addEventListener('pointerleave', onPointerCancel);
-}
-
-// ===============================
-// メーターパネルの表示切替関数
-// ===============================
-
-// 各パネルを表示切替 
-function switchMeterView(showId) {
-    const ids = ["meterTime", "logForm", "summaryPanel", "payForm"];
-
-    ids.forEach(id => {
-        document.getElementById(id)?.classList.toggle("hidden", id !== showId);
-    });
-
-    currentPanel = (showId === "meterTime") ? "time" : showId;
-}
-
-//  初期状態（時計表示）に戻す
-function backToMeterTime() {
-    switchMeterView("meterTime");
-}
-
-//全て閉じる関数 
-function backToHome() {
-    document.getElementById("logForm")?.classList.add("hidden");
-    document.getElementById("payForm")?.classList.add("hidden");
-    document.getElementById("summaryPanel")?.classList.add("hidden");
-}
-
-
-// ===============================
-// 実車パネルに売上集計を表示(今月度の)
-// ===============================
-async function initSummary() {
-    const summaryEl = document.getElementById("summaryAmount");
-    if (!summaryEl) return;
-
-    summaryEl.textContent = "読み込み中…";
-
-    try {
-        const total = await loadSalesSummary();
-        summaryEl.textContent = `今月度累計(税抜)\n${total.net.toLocaleString()}円`;
-    } catch (e) {
-        summaryEl.textContent = "読み込みに失敗しました🥲";
-        console.error(e);
-    }
-}
-
-/* =========================
-    ボタンイベント（パネル系）
-========================= */
-
-// 空車ボタンを押下したときの挙動
-logBtn.addEventListener("click", () => {
-    navigator.vibrate?.(50);
-    if (currentPanel === "logForm") {
-        switchMeterView("meterTime");
-    } else {
-        switchMeterView("logForm");
-    }
-});
-
-// 実車ボタンを押下したときの挙動
-setupPressAction({
-    element: summaryBtn,
-
-    shortPress: () => {
-        navigator.vibrate?.(40);
-        switchMeterView(
-            currentPanel === "summaryPanel"
-                ? "meterTime"
-                : "summaryPanel"
-        );
-    },
-
-    longPress: () => {
-        playMeterSound();//メーター音の再生
-        openFakeMeter();
-    },
-
-    longPressTime: 700
-});
-
-
-//支払いパネルの必要ボタン取得
-const payBtn = document.getElementById("payBtn");
-const saveBtn = document.getElementById("saveSales");
-const amountInput = document.getElementById("salesAmount");
-const memoInput = document.getElementById("salesMemo");
-const saveMsg = document.getElementById("saveMessage");
-
-
-// 支払ボタンを押下したときの挙動
-payBtn.addEventListener("click", () => {
-    navigator.vibrate?.(50);
-    if (currentPanel === "payForm") {
-        switchMeterView("meterTime");
-    } else {
-        switchMeterView("payForm");
-    }
-});
-
-
-
-/* 実車ボタン押下後に表示される詳細ボタンを押すと、売上集計ページに移管する処理 */
-document.getElementById("btnDetails")?.addEventListener("click", () => {
-    navigator.vibrate?.(50);
-    location.href = "./sales-details.html";
-});
-
-
-
-// ===============================
-// ログフォーム保存処理
-// ===============================
-
-const saveLogBtn = document.getElementById("saveLogBtn");
-const logInput = document.getElementById("logInput");
-
-if (saveLogBtn) {
-    saveLogBtn.addEventListener("click", async () => {
-        const note = logInput.value.trim();
-
-        if (!note) {
-            alert("メモを入力してね！");
-            return;
-        }
-
-        try {
-            await addDriverLog({
-                userId: window.currentUserUid,
-                note,
-                createdAt: new Date(),
-                businessDate: calcBusinessDateForSave()
-            });
-
-            alert("🚕 ログ書き込みました！");
-            logInput.value = ""; // 入力リセット
-            backToHome();
-            backToMeterTime();
-
-        } catch (e) {
-            console.error("💥 driverLogs 保存失敗:", e);
-            alert("保存に失敗したかも…😢");
-        }
-    });
-}
-
-// ===============================
-// 支払いフォーム表示/売上保存処理
-// ===============================
-
-// ⭐ 保存ボタン押したら Firestore に売上を追加
-saveBtn.addEventListener("click", async () => {
-    const amount = Number(amountInput.value);
-    const memo = memoInput.value || "";
-    const now = new Date();
-
-    const startTimeStr = localStorage.getItem('taxi_start_time');
-    const workDateStr = localStorage.getItem('taxi_work_date');
-    const hasWorkStart = !!(startTimeStr && workDateStr);
-
-    let workStartAt = null;
-    let workMinutes = null;
-
-    if (hasWorkStart) {
-        const [h, m] = startTimeStr.split(':').map(Number);
-
-        workStartAt = new Date(`${workDateStr}T00:00:00`);
-        workStartAt.setHours(h, m, 0, 0);
-
-        workMinutes = Math.floor((now - workStartAt) / 60000);
-    }
-
-    if (!amount) {
-        saveMsg.textContent = "※金額を入力してください";
-        return;
-    }
-
-    try {
-        await addSale({
-            userId: window.currentUserUid,
-            amount,
-            memo,
-            createdAt: now,
-            businessDate: workDateStr,
-
-            workStartAt,
-            workEndAt: now,
-            workMinutes
-        });
-
-        let message = "売上入力完了！\n本日も一日おつかれさまでした！";
-        if (!hasWorkStart) {
-            message += "\n\n⚠ 出勤時間が未入力のため、稼働時間は記録されていません。";
-        }
-
-        alert(message);
-
-        amountInput.value = "";
-        memoInput.value = "";
-
-        localStorage.removeItem('taxi_start_time');
-        localStorage.removeItem('taxi_work_date');
-
-        backToHome();
-        backToMeterTime();
-
-    } catch (e) {
-        saveMsg.textContent = "💥 保存失敗";
-        console.error(e);
-    }
-});
-
-/* =========================
-    現在時刻の表示
-========================= */
-const timeEl = document.getElementById('currentTime');
-//時計の自動更新処理
-function updateCurrentTime() {
-    const now = new Date();
-    const h = String(now.getHours()).padStart(2, '0');
-    const m = String(now.getMinutes()).padStart(2, '0');
-    timeEl.textContent = `${h}:${m}`;
-}
-
-let clockTimer = null;
-
-//時計の自動更新を開始
-function startClock() {
-    if (!clockTimer) {
-        clockTimer = setInterval(updateCurrentTime, 1000);
-    }
-}
-
-//時計の自動更新を停止
-function stopClock() {
-    clearInterval(clockTimer);
-    clockTimer = null;
-}
-
-
-/* =========================
-    応援コメント（ランダム）
-========================= */
-document.addEventListener('DOMContentLoaded', () => {
-    console.log("LED DOMContentLoaded fired");
-    const line1 = document.getElementById('ledLine1');
-    const line2 = document.getElementById('ledLine2');
-    if (!line1 || !line2) return;
-
-    line1.textContent = "LEDテスト表示";
-
-    const messages = [
-        '今日も安全運転で！',
-        '無理せずマイペースに。',
-        '焦らず、いつも通りで大丈夫！',
-        '気をつけていってらっしゃい！',
-        '楽しんだもん勝ち！',
-        '休憩も仕事のうちです！',
-        '安心安全な運転を！'
-    ];
-
-
-    // 🎯 応援コメントを更新する関数
-    function setRandomMessage() {
-        line1.textContent =
-            messages[Math.floor(Math.random() * messages.length)];
-    }
-
-
-    // 月別例外設定（必要な月だけ書く）
-    const rollCallOverrides = {
-        "2026-03": [10, 11, 20, 21]
-    };
-
-    function checkRollCall() {
-        const defaultDays = [10, 11, 21, 22];
-
-        const today = new Date();
-        const tomorrowDate = new Date(today);
-        tomorrowDate.setDate(today.getDate() + 1);
-
-        const yearMonth =
-            `${tomorrowDate.getFullYear()}-${String(tomorrowDate.getMonth() + 1).padStart(2, "0")}`;
-
-        // overrideがあればそれを使用、なければ通常日
-        const rollCallDays = rollCallOverrides[yearMonth] || defaultDays;
-
-        const tomorrow = tomorrowDate.getDate();
-
-        if (rollCallDays.includes(tomorrow)) {
-            line2.textContent = '明日は一斉点呼です';
-            line2.style.display = 'block';
-        } else {
-            line2.style.display = 'none';
-        }
-    }
-
-
-
-    // 🌟 初回実行
-    setRandomMessage();
-    checkRollCall();
-
-    // 🔁30分ごと更新（1800000ミリ秒）
-    const UPDATE_INTERVAL = 30 * 60 * 1000;
-    setInterval(setRandomMessage, UPDATE_INTERVAL);
-});
-
-
-/* ネタ用実車メーター （実車ボタン長押しで表示）*/
-function updateMeterDate() {
-    const el = document.getElementById('meterDate');
-    if (!el) return;
-
-    const d = new Date();
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-
-    const weeks = ['日', '月', '火', '水', '木', '金', '土'];
-    const w = weeks[d.getDay()];
-
-    el.textContent = `${y}.${m}.${day}（${w}）`;
-}
-
-updateMeterDate();
-
-let fakeTimer = null;
-let fakeSeconds = 0;
-let fakeAmount = 500;
-
-function openFakeMeter() {
-    const meter = document.getElementById('fakeMeter');
-    const amountEl = document.getElementById('fakeAmount');
-    const elapsedEl = document.getElementById('fakeElapsed');
-    const breakdownEl = document.getElementById('fakeBreakdown');
-
-    fakeSeconds = 0;
-    fakeAmount = 500;
-
-    breakdownEl.classList.add('hidden'); // メーター開始時にリセット
-    document.getElementById('fakeThanks')?.classList.add('hidden');
-
-    amountEl.textContent = `¥${fakeAmount.toLocaleString()}`;
-    elapsedEl.textContent = '00:00';
-
-    meter.classList.remove('hidden');
-
-    fakeTimer = setInterval(() => {
-        fakeSeconds++;
-
-        // 30秒ごとに+100円（テンポ良し）
-        if (fakeSeconds % 30 === 0) {
-            fakeAmount += 100;
-            amountEl.textContent = `¥${fakeAmount.toLocaleString()}`;
-        }
-
-        const mm = String(Math.floor(fakeSeconds / 60)).padStart(2, '0');
-        const ss = String(fakeSeconds % 60).padStart(2, '0');
-        elapsedEl.textContent = `${mm}:${ss}`;
-    }, 1000);
-}
-
-function closeFakeMeter() {
-    const meter = document.getElementById('fakeMeter');
-    meter.classList.add('hidden');
-    if (fakeTimer) {
-        clearInterval(fakeTimer);
-        fakeTimer = null;
-    }
-}
-
-//戻るボタンの挙動
-document.getElementById('fakeCloseBtn')?.addEventListener('click', closeFakeMeter);
-
-document.addEventListener('touchstart', () => {
-    meterSound.play().then(() => {
-        meterSound.pause();
-        meterSound.currentTime = 0;
-    });
-}, { once: true });
-
-//支払ボタンの挙動
-document.getElementById('fakeStopBtn')?.addEventListener('click', () => {
-    if (fakeTimer) {
-        clearInterval(fakeTimer);
-        fakeTimer = null;
-    }
-
-    playMeterSound();
-    showFakeTotal();
-    showThanksMessage();
-});
-
-
-function showFakeTotal() {
-    const breakdownEl = document.getElementById('fakeBreakdown');
-    const amountEl = document.getElementById('fakeAmount');
-
-    const PICKUP_FEE = 300;
-    const total = fakeAmount + PICKUP_FEE;
-
-    // 内訳表示
-    breakdownEl.textContent = `迎車料金 +¥${PICKUP_FEE}`;
-    breakdownEl.classList.remove('hidden');
-
-    // 合計金額表示
-    amountEl.textContent = `¥${total.toLocaleString()}`;
-}
-
-/* ボタンが押されたらご利用ありがとうございましたと表示する関数 */
-function showThanksMessage() {
-    const el = document.getElementById('fakeThanks');
-    if (!el) return;
-
-    el.textContent = `ご利用ありがとうございました`;
-    el.classList.remove('hidden');
-}
-
-
-/* =========================
-    コントロールパネルの動作
-========================= */
-/* 帰宅ボタン */
-document.getElementById('btnGoHome')?.addEventListener('click', () => {
-    navigator.vibrate?.(50);
-
-    const msg = encodeURIComponent('今から帰ります🚕');
-    location.href = `https://line.me/R/msg/text/?${msg}`;
-});
-
-/* GPTボタン */
-document.getElementById('btnChatGPT')?.addEventListener('click', () => {
-    navigator.vibrate?.(50);
-    location.href = 'https://chatgpt.com/';
-});
-
-
-/* マップボタン */
-document.getElementById('btnMap')?.addEventListener('click', () => {
-    navigator.vibrate?.(50);
-    location.href = 'https://www.google.com/maps';
-});
-
-/* 翻訳ボタン */
-const translateBtn = document.getElementById('btnTranslate');
-
-setupPressAction({
-    element: translateBtn,
-
-    // 短タップ → 英語
-    shortPress: () => {
-        navigator.vibrate?.(40);
-        location.href = 'https://translate.google.com/?sl=ja&tl=en';
-    },
-
-    // 長押し → 中国語
-    longPress: () => {
-        location.href = 'https://translate.google.com/?sl=ja&tl=zh-CN';
-    },
-
-    longPressTime: 600
-});
-
-/* 定型文ボタン */
-document.getElementById('btnPhrases')?.addEventListener('click', () => {
-    navigator.vibrate?.(50);
-    location.href = './phrases.html';
-});
-
-
-/* =========================
-    天気パネルの動作
-========================= */
-const API_KEY = '431956e1ae5d6c3bde0cbdbaf7b3102e';
-
-const statusEl = document.getElementById('weather-status');
-const tempEl = document.getElementById('weather-temp');
-const refreshBtn = document.getElementById('weather-refresh');
-
-let weatherInterval = null;
-const AUTO_UPDATE_INTERVAL = 30 * 60 * 1000; // 30分
-
-//天気パネル表示
-function fetchWeather(retry = false) {
-    if (!navigator.geolocation) {
-        statusEl.textContent = '位置情報が使えません';
-        return;
-    }
-
-    statusEl.textContent = '天気取得中…';
-    tempEl.textContent = '';
-
-    navigator.geolocation.getCurrentPosition(
-        async (position) => {
-            const { latitude: lat, longitude: lon } = position.coords;
-
-            try {
-                const res = await fetch(
-                    `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&lang=ja&appid=${API_KEY}`
-                );
-                const data = await res.json();
-
-                statusEl.textContent =
-                    `${getWeatherIcon(data.weather[0].main)} ${data.weather[0].description}`;
-                tempEl.textContent =
-                    `気温：${Math.round(data.main.temp)}℃`;
-            } catch {
-                statusEl.textContent = '天気取得に失敗しました';
-            }
-        },
-        () => {
-            if (!retry) {
-                setTimeout(() => fetchWeather(true), 3000);
-            } else {
-                statusEl.textContent = '位置情報が取得できません';
-            }
-        }
-    );
-}
-//天気パネルのアイコンを切り替える
-function getWeatherIcon(main) {
-    switch (main) {
-        case 'Clear': return '☀️';
-        case 'Clouds': return '☁️';
-        case 'Rain':
-        case 'Drizzle': return '🌧️';
-        case 'Thunderstorm': return '⛈️';
-        case 'Snow': return '❄️';
-        default: return '🌥️';
-    }
-}
-
-//天気パネルの更新ボタン
-refreshBtn?.addEventListener('click', fetchWeather);
-
-
-// 天気初回表示実行
-fetchWeather();
-startAutoUpdate();
-
-
-// 天気自動更新関数
-function startAutoUpdate() {
-    if (weatherInterval === null) {
-        weatherInterval = setInterval(fetchWeather, AUTO_UPDATE_INTERVAL);
-    }
-}
-
-// 天気自動更新停止関数
-function stopAutoUpdate() {
-    if (weatherInterval !== null) {
-        clearInterval(weatherInterval);
-        weatherInterval = null;
-    }
 }
 
 // ------------------------------
@@ -728,22 +172,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-/* =========================
-    業務日判定（4:00切替）
-========================= */
-function getWorkDate(date) {
-    const d = new Date(date);
-
-    // 深夜0:00〜4:59は前日の業務日扱い
-    if (d.getHours() < 5) {
-        d.setDate(d.getDate() - 1);
-    }
-
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
-}
 
 
 /* =========================
@@ -785,19 +213,3 @@ function calculateTimes(startValue, regularEl, returnEl, endEl, nextStartEl) {
 }
 
 
-/* =========================
-    出勤時間計算用：共通ユーティリティ
-========================= */
-function addMinutes(date, minutes) {
-    const d = new Date(date);
-    d.setMinutes(d.getMinutes() + minutes);
-    return d;
-}
-
-
-//時間を「〇〇：〇〇」の表記にする関数
-function formatTime(date) {
-    const h = String(date.getHours()).padStart(2, '0');
-    const m = String(date.getMinutes()).padStart(2, '0');
-    return `${h}:${m}`;
-}
