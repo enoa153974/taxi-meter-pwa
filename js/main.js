@@ -242,20 +242,68 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    // 🎯 一斉点呼の日判定
-    function checkRollCall() {
-        const rollCallDays = [10, 11, 21, 22]; // 一斉点呼の日
-        const today = new Date();
-        const tomorrow = today.getDate() + 1;
+    // 月別例外（必要な月だけ）
+    const rollCallOverrides = {
+        //3月度
+        "2026-02": [10, 11, 20, 21]
+    };
 
-        if (rollCallDays.includes(tomorrow)) {
-            line2.textContent = '明日は一斉点呼です';
-            line2.style.display = 'block';
-        } else {
-            line2.style.display = 'none';
-        }
+    // 月キー生成
+    function getMonthKey(date) {
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
     }
 
+    function checkRollCall() {
+        const defaultDays = [10, 11, 21, 22];
+
+        const today = new Date();
+        const todayDate = today.getDate();
+        const monthKey = getMonthKey(today);
+
+        const activeDays =
+            rollCallOverrides[monthKey] ?? defaultDays;
+
+        // セットを自動抽出（連続する日をグループ化）
+        const sorted = [...activeDays].sort((a, b) => a - b);
+        const sets = [];
+        let temp = [sorted[0]];
+
+        for (let i = 1; i < sorted.length; i++) {
+            if (sorted[i] === sorted[i - 1] + 1) {
+                temp.push(sorted[i]);
+            } else {
+                sets.push(temp);
+                temp = [sorted[i]];
+            }
+        }
+        sets.push(temp);
+
+        const line2 = document.getElementById("ledLine2");
+        if (!line2) return;
+
+        let message = "";
+
+        sets.forEach(set => {
+            const firstDay = set[0];
+
+            // 前日表示（セットの1日目の前だけ）
+            if (todayDate === firstDay - 1) {
+                message = "明日は一斉点呼です";
+            }
+
+            // 当日表示
+            if (set.includes(todayDate)) {
+                message = "本日は一斉点呼です";
+            }
+        });
+
+        if (message) {
+            line2.textContent = message;
+            line2.style.display = "block";
+        } else {
+            line2.style.display = "none";
+        }
+    }
 
     // 🌟 初回実行
     setRandomMessage();
