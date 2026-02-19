@@ -31,8 +31,13 @@ function formatTimeHM(date) {
 function updateMonthLabel(date) {
     const el = document.getElementById("analysisMonthLabel");
     if (!el) return;
-    el.textContent = `${date.getFullYear()}年${date.getMonth() + 1}月度`;
+
+    const { end } = getBillingPeriod(date);
+
+    el.textContent =
+        `${end.getFullYear()}年${end.getMonth() + 1}月度`;
 }
+
 
 function updateMonthNavState() {
     const nextBtn = document.getElementById("nextMonth");
@@ -87,6 +92,7 @@ async function render() {
         `税抜合計：${total.net.toLocaleString()}円`;
     document.getElementById("workDays").textContent =
         `${Object.keys(grouped).length}日`;
+
 
     /* =========================
      * 日別カード

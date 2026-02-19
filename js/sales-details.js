@@ -61,7 +61,7 @@ async function render() {
     // 現在の乗務回数 
     const days = Object.keys(grouped).length;
     document.getElementById("workDays").textContent = `${days}回`;
-    document.getElementById("leftworkDays").textContent = `${20-days}回`;
+    document.getElementById("leftworkDays").textContent = `${20 - days}回`;
 
     // 日別売上表
     const tbody = document.getElementById("dailySales");
@@ -129,7 +129,11 @@ ${items.map(t => `<li>${t}</li>`).join("")}
 </ul>
 `;
             logsEl.appendChild(div);
-        });    /* ===== 売上メモのクリック表示 ===== */
+        });  
+        
+        
+        
+        /* ===== 売上メモのクリック表示 ===== */
     document.querySelectorAll(".memo-btn").forEach(btn => {
         btn.addEventListener("click", () => {
             navigator.vibrate?.(50);
@@ -148,6 +152,7 @@ ${items.map(t => `<li>${t}</li>`).join("")}
             );
         });
     });
+
 }
 
 render().catch(e => {
