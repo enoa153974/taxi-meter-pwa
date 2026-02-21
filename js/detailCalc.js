@@ -27,46 +27,31 @@ export function getBillingPeriod(date = new Date()) {
     const d = new Date(date);
     d.setHours(0, 0, 0, 0);
 
-
-    // ==========================
-    //  特例期間（必要ならここに追記）
-    // ==========================
+    // 特例（この方式が正解）
     const specialRanges = [
-        // 【2月度】 2026/1/21〜2026/2/19
-        { start: new Date(2026, 0, 21), end: new Date(2026, 1, 19) },
-
-        // 【3月度】 2026/2/20〜2026/3/21
-        { start: new Date(2026, 1, 20), end: new Date(2026, 2, 21) },
-
-        // 【4月度】 2026/3/22〜2026/4/20
-        { start: new Date(2026, 2, 22), end: new Date(2026, 3, 20) }
+        { start: new Date(2026, 0, 21), end: new Date(2026, 1, 19) }, // 2月度
+        { start: new Date(2026, 1, 20), end: new Date(2026, 2, 21) }, // 3月度
+        { start: new Date(2026, 2, 22), end: new Date(2026, 3, 20) }  // 4月度
     ];
 
-    // 今日が特例に含まれるかチェック
     for (const r of specialRanges) {
-        if (d >= r.start && d <= r.end) {
-            return r;
-        }
+        const s = new Date(r.start); s.setHours(0, 0, 0, 0);
+        const e = new Date(r.end); e.setHours(23, 59, 59, 999);
+        if (d >= s && d <= e) return { start: s, end: e };
     }
 
-    // ==========================
-    //  通常ルール（21日〜翌20日）
-    // ==========================
+    // 通常（21日〜翌20日）
     const year = d.getFullYear();
-    const month = d.getMonth(); // 0=1月
+    const month = d.getMonth();
 
-    // 今日が21日以降なら今月開始
     const start = new Date(year, month, 21);
+    if (d.getDate() < 21) start.setMonth(start.getMonth() - 1);
+    start.setHours(0, 0, 0, 0);
 
-    // 今日が20日以前なら前月開始
-    if (d.getDate() < 21) {
-        start.setMonth(start.getMonth() - 1);
-    }
-
-    // 終了は開始の翌月20日
     const end = new Date(start);
     end.setMonth(end.getMonth() + 1);
     end.setDate(20);
+    end.setHours(23, 59, 59, 999);
 
     return { start, end };
 }
@@ -81,6 +66,7 @@ export function calcBusinessDateForSave(date = new Date()) {
         d.setDate(d.getDate() - 1);
     }
 
+
     // 時刻を切り落として日付だけに
     d.setHours(0, 0, 0, 0);
 
@@ -89,45 +75,57 @@ export function calcBusinessDateForSave(date = new Date()) {
 
 // 集計用（旧データ対応）
 export function getBusinessDateForCalc(data) {
-    // ① businessDate がある場合（最優先）
+
+    // ===== businessDate優先 =====
     if (data.businessDate) {
+
+        // NOTE: デバッグ用
+        //console.log("businessDate raw =", data.businessDate);
+
         let d;
 
-        // Date
         if (data.businessDate instanceof Date) {
             d = new Date(data.businessDate);
 
-            // Firestore Timestamp
         } else if (typeof data.businessDate.toDate === "function") {
             d = data.businessDate.toDate();
 
-            // string（YYYY-MM-DD）
         } else if (typeof data.businessDate === "string") {
-            d = new Date(`${data.businessDate}T00:00:00`);
+
+            if (/^\d{8}$/.test(data.businessDate)) {
+                const y = data.businessDate.slice(0, 4);
+                const m = data.businessDate.slice(4, 6);
+                const day = data.businessDate.slice(6, 8);
+                d = new Date(`${y}-${m}-${day}`);
+            } else {
+                d = new Date(data.businessDate);
+            }
 
         } else {
             return null;
         }
 
         d.setHours(0, 0, 0, 0);
+
         return d;
     }
 
-    // ② 旧データ：createdAt から算出
+    // ===== createdAt fallback =====
     if (!data.createdAt) return null;
 
     const d = data.createdAt instanceof Date
         ? new Date(data.createdAt)
         : data.createdAt.toDate();
 
-    // AM5時ルール
     if (d.getHours() < 5) {
         d.setDate(d.getDate() - 1);
     }
 
     d.setHours(0, 0, 0, 0);
     return d;
+
 }
+
 
 //firestoreから期間内だけ合計を出す関数
 // firestoreから期間内だけ合計を出す関数（税抜・税込）
@@ -189,7 +187,6 @@ export function groupDriverLogsByDate(logs) {
 
         if (!map[date]) map[date] = [];
 
-        // 👇 ここが肝
         const text =
             typeof data.note === "string"
                 ? data.note

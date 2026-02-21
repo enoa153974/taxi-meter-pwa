@@ -12,80 +12,89 @@ import { buildMonthSummary } from "./monthSummary.js";
  * 状態
  * ========================= */
 let gptPayload = null;
-
-// 今日（未来ガード用）
 const todayBase = new Date();
 
-// 表示中の分析月（初期：今月）
-let analysisBaseDate = new Date();
+//月度判定
+const { end } = getBillingPeriod(todayBase);
+let analysisBaseDate = new Date(end.getFullYear(), end.getMonth(), 15);
+
+// 「今日が属する月度」を、この画面での“最大月”にする
+const { end: maxEnd } = getBillingPeriod(new Date());
+const maxBaseDate = new Date(maxEnd.getFullYear(), maxEnd.getMonth(), 15);
+
 
 /* =========================
  * Utils
  * ========================= */
+//時間の形式を整える
 function formatTimeHM(date) {
     const h = String(date.getHours()).padStart(2, "0");
     const m = String(date.getMinutes()).padStart(2, "0");
     return `${h}:${m}`;
 }
 
+//月別分析の〇年度の見出しの生成（ここで何月度の集計かを決定）
 function updateMonthLabel(date) {
     const el = document.getElementById("analysisMonthLabel");
     if (!el) return;
 
-    const { end } = getBillingPeriod(date);
-
     el.textContent =
-        `${end.getFullYear()}年${end.getMonth() + 1}月度`;
+        `${date.getFullYear()}年${date.getMonth() + 1}月度`;
 }
 
-
+//▶ボタンを押すと翌月へ移管
 function updateMonthNavState() {
     const nextBtn = document.getElementById("nextMonth");
     if (!nextBtn) return;
 
-    const isCurrentMonth =
-        analysisBaseDate.getFullYear() === todayBase.getFullYear() &&
-        analysisBaseDate.getMonth() === todayBase.getMonth();
-
-    nextBtn.disabled = isCurrentMonth;
+    // 次に進んだ月が maxBaseDate を超えるなら無効化
+    const next = shiftMonth(analysisBaseDate, +1);
+    nextBtn.disabled = next > maxBaseDate;
 }
 
 /* =========================
  * Main Render
  * ========================= */
 async function render() {
+
+    //売上とログのデータをfirestoreから取得
     const allSales = await fetchSales();
     const driverLogs = await fetchDriverLogs();
 
+
+    //月度の期間を決める（start ~ end）
     const baseDate = analysisBaseDate;
     const { start, end } = getBillingPeriod(baseDate);
 
+    //決定した月度と翌月を生成
     updateMonthLabel(baseDate);
     updateMonthNavState();
 
-    // 期間表示
+    // 見出し下に月度期間表示
     const periodEl = document.getElementById("billingPeriod");
     if (periodEl) {
         periodEl.textContent = `${formatDate(start)} ～ ${formatDate(end)}`;
     }
 
-    // 対象データ抽出
+    // 対象データ抽出（sales）
     const sales = allSales.filter(s => {
         const d = getBusinessDateForCalc(s);
         return d >= start && d <= end;
     });
 
+    // 対象データ抽出（logs）
     const logs = driverLogs.filter(l => {
         const d = getBusinessDateForCalc(l);
         return d >= start && d <= end;
     });
 
-    // 集計
+    // 抽出したデータを集計
     const summary = buildMonthSummary(allSales, baseDate);
     const { grouped, total, workDays } = summary;
     const logsByDate = groupDriverLogsByDate(logs);
 
-    // 月サマリー
+
+    // 月別サマリーの表示
     document.getElementById("totalGross").textContent =
         `税込合計：${total.gross.toLocaleString()}円`;
     document.getElementById("totalNet").textContent =
@@ -95,7 +104,7 @@ async function render() {
 
 
     /* =========================
-     * 日別カード
+     * 日別カードの生成
      * ========================= */
     const container = document.getElementById("dailyReport");
     container.innerHTML = "";
@@ -109,11 +118,13 @@ async function render() {
                 formatDate(getBusinessDateForCalc(s)) === date
             );
 
+            //稼働時間のデータがない場合とある場合の表示切替
             let workTime = "⚠ 出勤時間未記録";
             if (sale?.workStartAt && sale?.workEndAt) {
                 workTime = `⏱ ${formatTimeHM(sale.workStartAt.toDate())} ～ ${formatTimeHM(sale.workEndAt.toDate())}`;
             }
 
+            //日別データカードを生成
             const memo = sale?.memo || "（売上メモなし）";
             const dayLogs = logsByDate[date] || [];
 
@@ -251,7 +262,7 @@ async function render() {
 
 
     /* =========================
-    * 所見
+    * 所見（月別＆曜日別）を生成
     * ========================= */
     const monthKey = getMonthKey(baseDate);
     const insight = await fetchMonthlyInsight(monthKey);
@@ -278,10 +289,13 @@ async function render() {
 
 }
 
+//所見用のmonthkey取得用関数
 function getMonthKey(date) {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
 
+//jsonファイルから該当する月別所見データを取得
+// NOTE: monthly-insight.json
 async function fetchMonthlyInsight(monthKey) {
     const res = await fetch("../data/monthly-insight.json");
     const json = await res.json();
@@ -289,6 +303,7 @@ async function fetchMonthlyInsight(monthKey) {
 }
 
 
+//曜日別所見を整頓
 function groupSalesByWeekday(sales) {
     const map = {};
     const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
@@ -309,23 +324,53 @@ function groupSalesByWeekday(sales) {
     return map;
 }
 
+
+/* =========================================================
+ * 月移動ユーティリティ
+ * ---------------------------------------------------------
+ * ■役割
+ * 表示中の分析月（analysisBaseDate）を安全に操作する
+ *
+ * ■設計方針
+ * 月度判定は「月の代表日」を基準に行う
+ * → 1日ではなく15日固定にする理由
+ *
+ *   ・月初(1日)だと前月扱いになる可能性がある
+ *   ・月末だと翌月扱いになる可能性がある
+ *   ・15日は必ずその月に属する
+ *
+ * つまり
+ * 「どの月度計算ロジックでもズレない日」
+ * を基準日として採用している
+ * ========================================================= */
+
+
+/**
+ * 指定月から ±nヶ月移動した Date を返す
+ *
+ * @param {Date} date 基準日
+ * @param {number} diff 移動月数（例：-1=前月、+1=翌月）
+ * @returns {Date} 移動後の基準日（常に15日固定）
+ */
+function shiftMonth(date, diff) {
+    return new Date(date.getFullYear(), date.getMonth() + diff, 15);
+}
+
+
 /* =========================
- * 月移動
+ * 月移動イベント
  * ========================= */
+
+// ◀をクリックすると前月を表示
 document.getElementById("prevMonth")?.addEventListener("click", () => {
-    analysisBaseDate.setMonth(analysisBaseDate.getMonth() - 1);
+    analysisBaseDate = shiftMonth(analysisBaseDate, -1);
     render();
 });
 
+// ▶をクリックすると次月を表示
 document.getElementById("nextMonth")?.addEventListener("click", () => {
-    const next = new Date(analysisBaseDate);
-    next.setMonth(next.getMonth() + 1);
-
-    if (
-        next.getFullYear() > todayBase.getFullYear() ||
-        (next.getFullYear() === todayBase.getFullYear() &&
-            next.getMonth() > todayBase.getMonth())
-    ) return;
+    const next = shiftMonth(analysisBaseDate, +1);
+    if (next > maxBaseDate) return;
 
     analysisBaseDate = next;
     render();
@@ -334,6 +379,7 @@ document.getElementById("nextMonth")?.addEventListener("click", () => {
 /* =========================
  * Init
  * ========================= */
+//エラー時の表示
 render().catch(e => {
     console.error(e);
     alert("月別データの読み込みに失敗しました");
