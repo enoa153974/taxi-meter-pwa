@@ -23,6 +23,13 @@ export function initAuth() {
                 window.currentUser = user;
                 window.currentUserUid = user.uid;
 
+
+                // uid表示用処理
+                const debug = document.querySelector("#debug-uid");
+                if (debug) {
+                    debug.textContent = user.uid;
+                }
+
                 resolve(user);
                 return;
             }

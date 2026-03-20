@@ -250,12 +250,31 @@ markdown
 /
 ├─ index.html
 ├─ sales-details.html
+├─ monthly-report.html
+├─ phrases.html
+|
+|
 ├─ assets/
-│  ├─ css/
-│  │  └─ style.css
-│  └─ js/
-│     ├─ main.js          // メーター画面制御
-│     ├─ detailCalc.js    // 集計・日付ロジック
-│     ├─ firestore.js     // Firestore 通信
-│     └─ weather.js       // 天気取得（統合予定）
-
+│  ├─ css
+|  ├── monthly-report.css
+|  └── style.css
+|
+|  data
+|  └── monthly-insight.json├── sales-details.css
+|
+|  js
+|  ├── auth.js
+|  ├── clock.js
+|  ├── detailCalc.js
+|  ├── dom.js
+|  ├── fakeMeter.js
+|  ├── firebase.js
+|  ├── firestore.js
+|  ├── main.js
+|  ├── monthSummary.js
+|  ├── monthry-details.js
+|  ├── sales-details.js
+|  ├── sound.js
+|  ├── uiHandlers.js
+|  ├── util.js
+|  └── weather.js
