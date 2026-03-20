@@ -245,7 +245,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // 月別例外（必要な月だけ）
     const rollCallOverrides = {
         //3月度
-        "2026-02": [10, 11, 20, 21]
+        "2026-02": [10, 11, 20, 21],
+        //4月度
+        "2026-03": [10, 11, 22, 23]
     };
 
     // 月キー生成
