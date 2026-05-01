@@ -1,4 +1,4 @@
-import { fetchSales } from
+import { fetchSalesByPeriod } from
     "./firestore.js";
 
 
@@ -135,18 +135,12 @@ export async function loadSalesSummary() {
     let gross = 0;
     let net = 0;
 
-    const sales = await fetchSales();
+    const sales = await fetchSalesByPeriod(start, end);
 
     sales.forEach(data => {
-        if (!data.createdAt) return;
-
-        const businessDate = getBusinessDateForCalc(data);
-
-        if (businessDate >= start && businessDate <= end) {
-            const amount = Number(data.amount) || 0;
-            gross += amount;
-            net += Math.floor(amount / 1.1);
-        }
+        const amount = Number(data.amount) || 0;
+        gross += amount;
+        net += Math.floor(amount / 1.1);
     });
 
     return { gross, net };

@@ -53,31 +53,21 @@ import {
  */
 
 
-export function buildMonthSummary(allSales, baseDate) {
+export function buildMonthSummary(sales, baseDate) {
 
     /* =========================
      * ① 月度期間取得
      * ========================= */
     const { start, end } = getBillingPeriod(baseDate);
 
-
     /* =========================
-     * ② 対象月度の売上だけ抽出
-     * ========================= */
-    const sales = allSales.filter(s => {
-        const d = getBusinessDateForCalc(s);
-        return d >= start && d <= end;
-    });
-
-
-    /* =========================
-     * ③ 日別売上集計
+     * ② 日別売上集計
      * ========================= */
     const grouped = groupByDate(sales);
 
 
     /* =========================
-     * ④ 合計計算
+     * ③ 合計計算
      * ========================= */
     const total = calcTotal(grouped);
 

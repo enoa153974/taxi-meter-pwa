@@ -4,7 +4,7 @@ import {
     getBillingPeriod,
     getBusinessDateForCalc
 } from "./detailCalc.js";
-import { fetchSales, fetchDriverLogs } from "./firestore.js";
+import { fetchSalesByPeriod, fetchDriverLogsByPeriod } from "./firestore.js";
 
 import { buildMonthSummary } from "./monthSummary.js";
 
@@ -57,14 +57,16 @@ function updateMonthNavState() {
  * ========================= */
 async function render() {
 
-    //売上とログのデータをfirestoreから取得
-    const allSales = await fetchSales();
-    const driverLogs = await fetchDriverLogs();
-
 
     //月度の期間を決める（start ~ end）
     const baseDate = analysisBaseDate;
     const { start, end } = getBillingPeriod(baseDate);
+
+    //  Firestoreで必要分だけ取得
+    const sales = await fetchSalesByPeriod(start, end);
+    const logs = await fetchDriverLogsByPeriod(start, end);
+
+
 
     //決定した月度と翌月を生成
     updateMonthLabel(baseDate);
@@ -76,20 +78,9 @@ async function render() {
         periodEl.textContent = `${formatDate(start)} ～ ${formatDate(end)}`;
     }
 
-    // 対象データ抽出（sales）
-    const sales = allSales.filter(s => {
-        const d = getBusinessDateForCalc(s);
-        return d >= start && d <= end;
-    });
-
-    // 対象データ抽出（logs）
-    const logs = driverLogs.filter(l => {
-        const d = getBusinessDateForCalc(l);
-        return d >= start && d <= end;
-    });
 
     // 抽出したデータを集計
-    const summary = buildMonthSummary(allSales, baseDate);
+    const summary = buildMonthSummary(sales, baseDate);
     const { grouped, total, workDays } = summary;
     const logsByDate = groupDriverLogsByDate(logs);
 

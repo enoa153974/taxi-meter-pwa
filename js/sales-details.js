@@ -6,7 +6,7 @@ import {
     getBillingPeriod,
     getBusinessDateForCalc
 } from "./detailCalc.js";
-import { fetchSales, fetchDriverLogs } from "./firestore.js";
+import { fetchSalesByPeriod, fetchDriverLogsByPeriod } from "./firestore.js";
 
 
 //時刻フォーマット関数
@@ -17,11 +17,15 @@ function formatTimeHM(date) {
 }
 
 async function render() {
-    const allSales = await fetchSales();
-    const driverLogs = await fetchDriverLogs();
-
     // ★ 月度期間を取得
     const { start, end } = getBillingPeriod();
+
+    //今月度の売上とログを取得
+    const sales = await fetchSalesByPeriod(start, end);
+    const logs = await fetchDriverLogsByPeriod(start, end);
+
+
+
 
     //対象期間の表示
     const periodEl = document.getElementById("billingPeriod");
@@ -30,17 +34,6 @@ async function render() {
             `${formatDate(start)} ～ ${formatDate(end)}`;
     }
 
-    // ★ 月度内の売上だけに絞る
-    const sales = allSales.filter(s => {
-        const businessDate = getBusinessDateForCalc(s);
-        return businessDate >= start && businessDate <= end;
-    });
-
-    //月度内のログだけに絞る
-    const logs = driverLogs.filter(l => {
-        const businessDate = getBusinessDateForCalc(l);
-        return businessDate >= start && businessDate <= end;
-    });
 
 
     // 日別集計
@@ -69,10 +62,14 @@ async function render() {
         .sort(([dateA], [dateB]) => dateB.localeCompare(dateA))
         .forEach(([date, data]) => {
 
-            const saleOfDay = sales.find(s => {
+            const daySales = sales.filter(s => {
                 const d = formatDate(getBusinessDateForCalc(s));
                 return d === date;
             });
+
+            const saleOfDay = daySales.find(s =>
+                s.workStartAt && s.workEndAt
+            );
 
             let workTimeText = '⚠ 出勤時間未記録';
 
@@ -129,11 +126,11 @@ ${items.map(t => `<li>${t}</li>`).join("")}
 </ul>
 `;
             logsEl.appendChild(div);
-        });  
-        
-        
-        
-        /* ===== 売上メモのクリック表示 ===== */
+        });
+
+
+
+    /* ===== 売上メモのクリック表示 ===== */
     document.querySelectorAll(".memo-btn").forEach(btn => {
         btn.addEventListener("click", () => {
             navigator.vibrate?.(50);
