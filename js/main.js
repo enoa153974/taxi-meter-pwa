@@ -203,11 +203,14 @@ function calculateTimes(startValue, regularEl, returnEl, endEl, nextStartEl) {
 
     /* ===== 深夜3時超え判定 ===== */
     const LATE_HOUR = 3;
-    toggleClass(
-        returnEl,
-        'is-late-end',
-        returnDate.getHours() >= LATE_HOUR
-    );
+
+    const isNextDay =
+        returnDate.toDateString() !== startDate.toDateString();
+
+    const isLateEnd =
+        isNextDay && returnDate.getHours() >= LATE_HOUR;
+
+    toggleClass(returnEl, 'is-late-end', isLateEnd);
 }
 
 
