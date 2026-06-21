@@ -18,6 +18,15 @@ export function getWeekday(date) {
     return weekdays[d.getDay()];
 }
 
+/* businessDateをstring型に変換する関数 */
+export function toBusinessDateKey(date) {
+    const d = date instanceof Date ? date : date.toDate();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+
+}
 
 
 // ===============================

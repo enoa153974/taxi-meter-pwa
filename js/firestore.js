@@ -9,6 +9,8 @@ import {
     "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { db } from "./firebase.js";
 
+import { toBusinessDateKey } from "./detailCalc.js";
+
 // ------------------------------
 // ◆ 売上データの取得関数
 // ------------------------------
@@ -41,11 +43,14 @@ export async function fetchSales() {
 
 //集計用の売上取得関数
 export async function fetchSalesByPeriod(start, end) {
+    const startKey = toBusinessDateKey(start);
+    const endKey = toBusinessDateKey(end);
+
     const q = query(
         collection(db, "sales"),
-        where("createdAt", ">=", start),
-        where("createdAt", "<=", end),
-        orderBy("createdAt", "desc")
+        where("businessDate", ">=", startKey),
+        where("businessDate", "<=", endKey),
+        orderBy("businessDate", "desc")
     );
 
     const snapshot = await getDocs(q);
@@ -58,8 +63,7 @@ export async function fetchSalesByPeriod(start, end) {
             amount: data.amount ?? 0,
             memo: data.memo ?? "",
             createdAt: data.createdAt ?? null,
-
-            // 👇 これ追加
+            businessDate: data.businessDate ?? null,
             workStartAt: data.workStartAt ?? null,
             workEndAt: data.workEndAt ?? null,
             workMinutes: data.workMinutes ?? null
@@ -82,35 +86,80 @@ export async function fetchDriverLogs() {
     const snapshot = await getDocs(q);
     return snapshot.docs.map(docSnap => {
         const data = docSnap.data();
-
         return {
             id: docSnap.id,
             note: data.note ?? "",
-            createdAt: data.createdAt?.toDate() ?? null
+            createdAt: data.createdAt?.toDate() ?? null,
+            businessDate: data.businessDate ?? null
         };
     });
 }
 
 //集計用のログ取得関数
+// ❗ IMPORTANT: 2026-06-22現在
+// driverLogs は旧データと新データの両形式に対応している。
+//
+// 【旧形式】
+// note.businessDate に businessDate を保持
+//
+// 【新形式】
+// businessDate をトップレベルに保持（sales と同一仕様）
+//
+// 現在は旧データを表示するため、fetchDriverLogsByPeriod() では
+// 両形式を取得・統合している。
+//
+// TODO:
+// 過去ログ（旧形式）を参照する必要がなくなった時点
+// （目安：旧データが集計対象期間から外れた頃）に、
+// note.businessDate 対応コードを削除し、
+// businessDate のみを使用する実装へ移行する。
+//
+// その際は以下も合わせて削除・整理する。
+// - note.businessDate を取得する Firestore クエリ
+// - 旧形式データの変換処理
+// - 旧形式とのマージ処理
+
 export async function fetchDriverLogsByPeriod(start, end) {
-    const q = query(
+    const newQ = query(
         collection(db, "driverLogs"),
-        where("createdAt", ">=", start),
-        where("createdAt", "<=", end),
-        orderBy("createdAt", "desc")
+        where("businessDate", ">=", start),
+        where("businessDate", "<=", end),
+        orderBy("businessDate", "desc")
     );
 
-    const snapshot = await getDocs(q);
+    const oldQ = query(
+        collection(db, "driverLogs"),
+        where("note.businessDate", ">=", start),
+        where("note.businessDate", "<=", end),
+        orderBy("note.businessDate", "desc")
+    );
 
-    return snapshot.docs.map(docSnap => {
+    const [newSnapshot, oldSnapshot] = await Promise.all([
+        getDocs(newQ),
+        getDocs(oldQ)
+    ]);
+
+    const newLogs = newSnapshot.docs.map(docSnap => {
         const data = docSnap.data();
-
         return {
             id: docSnap.id,
             note: data.note ?? "",
-            createdAt: data.createdAt?.toDate() ?? null
+            createdAt: data.createdAt ?? null,
+            businessDate: data.businessDate ?? null
         };
     });
+
+    const oldLogs = oldSnapshot.docs.map(docSnap => {
+        const data = docSnap.data();
+        return {
+            id: docSnap.id,
+            note: data.note?.note ?? "",
+            createdAt: data.createdAt ?? data.note?.createdAt ?? null,
+            businessDate: data.note?.businessDate ?? null
+        };
+    });
+
+    return [...newLogs, ...oldLogs];
 }
 
 /**
@@ -126,9 +175,9 @@ export async function addSale(data) {
 }
 
 // Firestore にログデータと追加する
-export async function addDriverLog(note) {
+export async function addDriverLog(data) {
     return addDoc(collection(db, "driverLogs"), {
-        note,
+        ...data,
         createdAt: serverTimestamp()
     });
 }
